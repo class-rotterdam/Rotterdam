@@ -1,0 +1,54 @@
+[
+    {
+        "type": "infr",
+        "guaranteeName": "KubeletTooManyPods",
+        "maxAllowed": 2,
+        "action": "scale_down",
+        "scaleFactor": 2,
+        "guarantees": [
+            {
+                "name": "kubelet_running_pod_count",
+                "constraint": "kubelet_running_pod_count < 50"
+            }
+        ]
+    },
+    {
+        "type": "infr",
+        "guaranteeName": "KubeletPodsLessThan100",
+        "maxAllowed": 2,
+        "action": "scale_down",
+        "scaleFactor": 2,
+        "guarantees": [
+            {
+                "name": "kubelet_running_pod_count",
+                "constraint": "kubelet_running_pod_count < 100"
+            }
+        ]
+    },
+    {
+        "type": "infr",
+        "guaranteeName": "KubeletTooFewPods",
+        "maxAllowed": 2,
+        "action": "scale_up",
+        "scaleFactor": 2,
+        "guarantees": [
+            {
+                "name": "kubelet_running_pod_count",
+                "constraint": "kubelet_running_pod_count > 50"
+            }
+        ]
+    },
+    {
+        "type": "infr",
+        "guaranteeName": "Test_Prometheus_01",
+        "maxAllowed": 3,
+        "action": "scale_up",
+        "scaleFactor": 2,
+        "guarantees": [
+            {
+                "name": "go_memstats_frees_total",
+                "constraint": "go_memstats_frees_total < 100000"
+            }
+        ]
+    }
+]

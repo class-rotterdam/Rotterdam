@@ -1,0 +1,647 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.3.16",
+    "title": "Rotterdam CaaS",
+    "description": "Rotterdam CaaS REST API is responsible for the deployment of tasks and docks in a Kubernetes cluster"
+  },
+  "schemes": ["http"],
+  "host": "rotterdam-caas.192.168.7.28.xip.io",
+  "basePath": "/api/v1",
+  "tags": [{
+      "name": "status",
+      "description": "Information about the status and configuration of Rotterdam"
+    }, {
+      "name": "dock",
+      "description": "Operations about Rotterdam Docks (namespaces)"
+    }, {
+      "name": "task",
+      "description": "Operations about Rotterdam Tasks"
+    }, {
+      "name": "qos",
+      "description": "QoS / SLA operations"
+    }
+  ],  
+  "paths": {
+    "/": {
+      "get": {
+        "tags": ["status"],
+        "description": "status of the rest api server",
+        "summary": "Get the status of the rest api server",
+        "operationId": "getStatus",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "REST API server information"
+          }
+        }
+      }
+    },
+    "/config": {
+      "get": {
+        "tags": ["status"],
+        "description": "Returns the current Rotterdam Configuration",
+        "summary": "Get the current Rotterdam Configuration",
+        "operationId": "getConfiguration",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Current Rotterdam Configuration"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      }
+    },
+    "/version": {
+      "get": {
+        "tags": ["status"],
+        "description": "Returns the current Rotterdam version",
+        "summary": "Get the current Rotterdam version",
+        "operationId": "getVersion",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Rotterdam version"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      }
+    },
+    "/status": {
+      "get": {
+        "tags": ["status"],
+        "description": "Returns the current Rotterdam status",
+        "summary": "Get the current Rotterdam status",
+        "operationId": "getStatus2",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Rotterdam status"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      }
+    },
+    "/docks/tasks": {
+      "get": {
+        "tags": ["dock"],
+        "description": "Returns all the current Rotterdam tasks (all docks)",
+        "summary": "Returns all the current Rotterdam tasks (all docks)",
+        "operationId": "getAllTasks",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Rotterdam tasks"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      },
+      "post": {
+        "tags": ["dock"],
+        "description": "Creates a new Rotterdam Task in a dock",
+        "summary": "Creates a new Rotterdam Task in a dock",
+        "operationId": "createTask",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "task",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Task"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task Created",
+            "schema": {
+              "$ref": "#/definitions/Task"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      }
+    },
+    "/docks/tasks-compss": {
+      "post": {
+        "tags": ["dock"],
+        "description": "Creates a new Rotterdam COMPSs Task (set of workers)",
+        "summary": "Creates a new Rotterdam COMPSs Task (set of workers)",
+        "operationId": "createCompssTask",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "task",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Task"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task Created",
+            "schema": {
+              "$ref": "#/definitions/Task"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      }
+    },
+    "/docks/tasksqos": {
+      "get": {
+        "tags": ["dock"],
+        "description": "Returns all the current Rotterdam tasks QoS (from all docks)",
+        "summary": "Returns all the current Rotterdam tasks QoS (from all docks)",
+        "operationId": "GetAllTasksQoS",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Rotterdam tasks"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      }
+    },
+    "/docks/{dock}/tasks": {
+      "get": {
+        "tags": ["dock"],
+        "description": "Get the list of tasks of a specific dock",
+        "summary": "Get the list of tasks of a specific dock",
+        "operationId": "getDockTasks",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dock",
+            "description": "namespace or logical group of the tasks",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tasks' list retrived"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      }
+    },
+    "/docks/{dock}/tasks/{name}": {
+      "get": {
+        "tags": ["task"],
+        "description": "Gets a Rotterdam Task",
+        "summary": "Gets a Rotterdam Task",
+        "operationId": "getTask",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "dock",
+            "description": "namespace or logical group of the tasks",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "description": "name the task",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task get",
+            "schema": {
+              "$ref": "#/definitions/Task"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Task Not Found"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      },
+      "put": {
+        "tags": ["task"],
+        "description": "Updates a Rotterdam Task",
+        "summary": "Updates a Rotterdam Task",
+        "operationId": "updateTask",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "dock",
+            "description": "namespace or logical group of the tasks",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "description": "name the task",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task get",
+            "schema": {
+              "$ref": "#/definitions/Task"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Task Not Found"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      },
+      "delete": {
+        "tags": ["task"],
+        "description": "Deletes a Rotterdam Task",
+        "summary": "Deletes a Rotterdam Task",
+        "operationId": "deleteTask",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "dock",
+            "description": "namespace or logical group of the tasks",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "description": "name the task",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task get",
+            "schema": {
+              "$ref": "#/definitions/Task"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Task Not Found"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      }
+    },
+    "/sla/tasks/{name}/guarantee/{guarantee}": {
+      "post": {
+        "tags": ["qos"],
+        "description": "Process SLALite violations",
+        "summary": "Process SLALite violations",
+        "operationId": "processSLAViolation",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "description": "name of the task / agreement client id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "path",
+            "name": "guarantee",
+            "description": "guarantee name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "violation",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task Created",
+            "schema": {
+              "$ref": "#/definitions/Task"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      }
+    },
+    "/qos/definitions/{name}": {
+      "get": {
+        "tags": ["qos"],
+        "description": "Get a qos definition by name / id",
+        "summary": "Get a qos definition by name / id",
+        "operationId": "GetQoSDef",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "description": "name of the qos definition",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rotterdam QoS definition"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      }
+    },
+    "/qos/definitions": {
+      "get": {
+        "tags": ["qos"],
+        "description": "Get the list of QoS definitions",
+        "summary": "Get the list of QoS definitions",
+        "operationId": "GetQoSDefs",
+        "produces": ["application/json"],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Rotterdam QoS definitions"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      },
+      "post": {
+        "tags": ["qos"],
+        "description": "Load QoS definitions for SLAs generation",
+        "summary": "Load QoS definitions for SLAs generation",
+        "operationId": "PostQoSDefs",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "tasksQoS",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TasksQoS"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rotterdam QoS definitions"
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      }
+    }
+  },
+  "securityDefinitions": {
+		"rotterdam_auth": {
+			"type": "oauth2",
+			"authorizationUrl": "https://rotterdam.caas/oauth/authorize",
+			"flow": "implicit",
+			"scopes": {
+				"write:rotterdam": "modify tasks and docks",
+				"read:rotterdam": "read tasks and docks"
+			}
+		},
+		"api_key": {
+			"type": "apiKey",
+			"name": "api_key",
+			"in": "header"
+		}
+	},
+  "definitions": {
+    "TasksQoS": { 
+      "description": "A representation of a Tasks QoS list (version 1.1)",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "infr"
+          },
+          "guaranteeName": {
+            "type": "string",
+            "example": "KubeletTooManyPods"
+          },
+          "maxAllowed": {
+            "type": "int",
+            "example": 3
+          },
+          "action": {
+            "type": "string",
+            "example": "scale_down"
+          },
+          "scaleFactor": {
+            "type": "int",
+            "example": 2
+          },
+          "guarantees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "kubelet_running_pod_count"
+                },
+                "constraint": {
+                  "type": "string",
+                  "example": "kubelet_running_pod_count < 50"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Task": {
+      "description": "A representation of a Rotterdam Task (version 1.1)",
+      "type": "object",
+      "required": [
+        "name qos containers"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "example": "nginx-app"
+        },
+        "dock": {
+          "type": "string",
+          "example": "class"
+        },
+        "qos": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "example": "KubeletTooManyPods"
+            },
+            "description": {
+              "type": "string",
+              "example": "scale down task if cluster pods > 50"
+            }
+          }
+        },
+        "replicas": {
+          "type": "int",
+          "example": 2
+        },
+        "containers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name image ports"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "example": "nginx"
+              },
+              "image": {
+                "type": "string",
+                "example": "nginx"
+              },
+              "essential": {
+                "type": "boolean",
+                "example": true
+              },
+              "ports": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "containerPort": {
+                      "type": "int",
+                      "example": 80
+                    },
+                    "hostPort": {
+                      "type": "int",
+                      "example": 80
+                    },
+                    "protocol": {
+                      "type": "string",
+                      "example": "tcp"
+                    }
+                  }
+                }
+              },
+              "volumes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "example": "name"
+                    },
+                    "mounthPath": {
+                      "type": "string",
+                      "example": "mounthPath"
+                    }
+                  }
+                }
+              },
+              "environment": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "example": "TEST_VALUE"
+                    },
+                    "value": {
+                      "type": "string",
+                      "example": "1.2.3"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "externalDocs": {
+		"description": "Find out more about the CLASS project",
+		"url": "https://class-project.eu/"
+	}
+}
