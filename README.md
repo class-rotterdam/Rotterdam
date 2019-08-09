@@ -1,4 +1,10 @@
 # ROTTERDAM CAAS
+### CLASS Project: https://class-project.eu/
+
+
+"ACKNOWLEDGEMENT
+This work has been supported by the EU H2020 project CLASS, contract #780622."
+
 
 &copy; Atos Spain S.A. 2018
 
