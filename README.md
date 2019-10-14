@@ -286,6 +286,11 @@ The following methods have been defined:
 
 ### LICENSE
 
+Apache 2.0
+
+By downloading this software, the downloader agrees with the specified terms and conditions of the License Agreement and the particularities of the license provided.
+
+
 Libraries used in this project:
 
 | library                         | license | url                                   | description |
@@ -294,4 +299,3 @@ Libraries used in this project:
 | github.com/nikunjy/rules/parser | MIT | https://github.com/nikunjy/rules | Rules engine written in golang with the help of antlr |
 
 
-`Rotterdam` is licensed under [Apache License, version 2](LICENSE.TXT).
