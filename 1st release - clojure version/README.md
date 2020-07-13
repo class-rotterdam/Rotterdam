@@ -1,22 +1,20 @@
 # Rotterdam-CaaS
 
-[![version](https://img.shields.io/badge/version-0.0.8--SNAPSHOT-blue.svg)]()
+[![version](https://img.shields.io/badge/version-0.0.9--SNAPSHOT-blue.svg)]()
 
 &copy; Atos Spain S.A. 2016
 
-Rotterdam-CaaS (_version 0.0.8_) is a component of the European Project class (https://class-project.eu/).
+Rotterdam-CaaS (_version 0.0.9_) is a component of the European Project class (https://class-project.eu/).
 
 -----------------------
 
 [Description](#description)
 
-[Component architecture](#component-architecture)
-
 [Installation Guide](#installation-guide)
 
 [Usage Guide](#usage-guide)
 
-[Relation to other CLASS components](#relation-to-other-class-components)
+[LICENSE](#license)
 
 -----------------------
 
@@ -34,10 +32,6 @@ Rotterdam-CaaS (_version 0.0.8_) is a component of the European Project class (h
 1. Java version 8 or higher
 2. leiningen
 3. Connection to a Kubernetes REST API
-
------------------------
-
-### Component architecture
 
 
 -----------------------
@@ -217,12 +211,10 @@ lein ring server
 
 By default the API can be accessed in port `8083`. This can be modified in `project.clj` file, before launching the application.
 
-#### REST API services
 
+---------------------------------
 
+### LICENSE
 
------------------------
+`Rotterdam` is licensed under [Apache License, version 2](../../LICENSE).
 
-### Relation to other CLASS components
-
-This component will be used by the **COMPSs** module to deploy and manage tasks.

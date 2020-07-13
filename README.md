@@ -16,6 +16,8 @@
 
 [Description](#description)
 
+[Relation to other CLASS components](#relation-to-other-class-components)
+
 [Installation Guide](#installation-guide)
 
 [Usage Guide](#usage-guide)
@@ -33,6 +35,12 @@ Rotterdam is part of the **CLASS** Project (Edge and Cloud Computation: A Highly
 ![rotterdam](images/class_rotterdam_v2.png)
 
 A docker image can be downloaded from https://hub.docker.com/r/atosclass/rotterdam-caas.
+
+-----------------------
+
+### Relation to other CLASS components
+
+This component is used by **COMPSs & DataClay** module to deploy and manage applications in the Cloud and Edge platform manager by Rotterdam.
 
 -----------------------
 
@@ -320,6 +328,7 @@ QoS templates used to define the SLAs associated to the tasks managed by Rotterd
     }
     ```
 
+---------------------------------
 
 ### LICENSE
 
