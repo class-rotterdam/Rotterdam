@@ -62,6 +62,8 @@ Rotterdam-CaaS (_version 0.0.9_) is a component of the European Project class (h
     - **OpenshiftOauthToken** (e.g.) "eyJhbGciOiJSUzI1 ... 3MiOiJrdWJlcm5ldGVzL3Nlc"
 
     1. In OKD Web UI, go to selected project / namespace, i.e. the _default_ namespace, and select `Add to project > Deploy Image`
+	   ![rotterdam](https://github.com/class-rotterdam/Rotterdam/raw/master/images/deploy.png)
+	
     2. Select `Image Name`
         - `atosclass/rotterdam`
           - Name: `rotterdam-caasXXX`
