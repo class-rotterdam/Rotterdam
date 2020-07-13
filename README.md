@@ -79,6 +79,8 @@ This component is used by **COMPSs & DataClay** module to deploy and manage appl
     The **SLALiteEndPoint** is used to automatically generate SLAs and to stop or terminate them. The SLALite component should also point to Rotterdam to send it the violations.
 
     1. In OKD Web UI, go to selected project / namespace, i.e. the _default_ namespace, and select `Add to project > Deploy Image`
+	   ![rotterdam](images/deploy.png)
+		
     2. Select `Image Name`
         - `atosclass/slalite:1.7.9`
           - Name: `rotterdam-slaliteXXX`
@@ -183,6 +185,8 @@ ENTRYPOINT ["/opt/rotterdam/run_rotterdam.sh"]
 ### Usage Guide
 
 Once **Rotterdam** is deployed, you can access it through the REST API UI provided by _swagger_: (e.g.) http://rotterdam-caas.192.168.7.28.xip.io/swaggerui/
+
+![rotterdam](images/swagger.png)
 
 The following methods have been defined:
 
