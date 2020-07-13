@@ -18,11 +18,7 @@
 
 [Installation Guide](#installation-guide)
 
-[SLALite component](#slalite-component)
-
 [Usage Guide](#usage-guide)
-
-[Relation to other components](#porject-class:-relation-to-other-components)
 
 [LICENSE](#license)
 
@@ -173,12 +169,6 @@ EXPOSE 8333
 ENTRYPOINT ["/opt/rotterdam/run_rotterdam.sh"]
 ```
 
------------------------
-
-### SLALite component
-
-
-- ...
 
 -----------------------
 
@@ -333,4 +323,4 @@ QoS templates used to define the SLAs associated to the tasks managed by Rotterd
 
 ### LICENSE
 
-`Rotterdam` is licensed under [Apache License, version 2](LICENSE.TXT).
+`Rotterdam` is licensed under [Apache License, version 2](LICENSE).
