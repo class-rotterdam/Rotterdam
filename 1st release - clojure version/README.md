@@ -94,5 +94,5 @@ By default the API can be accessed in port `8082`. This can be modified in `proj
 
 ### LICENSE
 
-`Rotterdam` is licensed under [Apache License, version 2](../../LICENSE).
+`Rotterdam` is licensed under [Apache License, version 2](LICENSE.txt).
 
