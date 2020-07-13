@@ -38,159 +38,43 @@ Rotterdam-CaaS (_version 0.0.9_) is a component of the European Project class (h
 
 ### Installation Guide
 
-This application can be installed as a service / deployment in kubernetes, or as a server in a Linux / Windows environment.
+- You can download the repository and launch the server application using **leiningen** (see "_Usage Guide - 2. Server installation (Linux / Windows)_")
 
-#### 1. Installation in Kubernetes (_Deployment_)
+- You can download the repository and create the docker image from the "clojure version" folder:
 
-Deployment in K8s using image from docker: `rsucasas/class-k8-app:0.4`
+    ```bash
+    sudo docker build -t rotterdam .
+    sudo docker run -p 8082:8082 rotterdam
+    ```
 
-- Deployment (change the environment variables values according to your configuration):
+- You can also run **Rotterdam** in Docker by pulling the image from Docker Hub:
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: class-k8-app
-spec:
-  replicas: 1
-  revisionHistoryLimit: 10
-  selector:
-    matchLabels:
-      app: class-k8-app
-  template:
-    metadata:
-      labels:
-        app: class-k8-app
-    spec:
-      containers:
-        - image: rsucasas/class-k8-app:0.5
-          name: class-k8-app
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8083
-          env:
-            - name: K8s_API_URL
-              value: http://192.168.7.24:8001
-            - name: K8s_EXT_IP
-              value: 192.168.7.24
+    ```bash
+    docker pull atosclass/rotterdam-caas:0.0.9.4
+    docker run [OPTIONS] atosclass/rotterdam-caas:0.0.9.4 [COMMAND] [ARG...]
+    ```
 
-```
+- Finally, to run **Rotterdam** in Openshift, deploy the [image](https://hub.docker.com/r/atosclass/rotterdam-caas) from Docker Hub using the OKD UI. The following environment variables can be defined:
 
-**K8s_API_URL** Kubernetes REST API URL
-**K8s_EXT_IP** External IP used to access the application
+    - **KubernetesEndPoint** (e.g.) "http://192.168.7.28:8001"
+    - **OpenshiftEndPoint** (e.g.) "https://192.168.7.28:8443"
+    - **ServerIP** (e.g.) "192.168.7.28"
+    - **OpenshiftOauthToken** (e.g.) "eyJhbGciOiJSUzI1 ... 3MiOiJrdWJlcm5ldGVzL3Nlc"
 
-- Service
+    The **SLALiteEndPoint** is used to automatically generate SLAs and to stop or terminate them. The SLALite component should also point to Rotterdam to send it the violations.
 
-```yaml
-kind: Service
-apiVersion: v1
-metadata:
-  name: service-class-k8-app
-spec:
-  ports:
-    - name: http
-      port: 8082
-      protocol: TCP
-      targetPort: 8083
-  selector:
-    app: class-k8-app
-  externalIPs:
-    - 192.168.7.24
-```
-
-#### 2. Installation in Kubernetes (_StatefulSet_)
-
-- Create a persistent volumen
-
-```yaml
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: pv-2
-  labels:
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 2Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/home/rsucasas/k8s-data/v2"
-```
-
-- Create a volumen claim. K8s automatically binds this claim to an existing persistent volumen
-
-```yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: pvc-1
-spec:
-  storageClassName: manual
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-```
-
-- StatefulSet and Service
-
-```yaml
-kind: Service
-apiVersion: v1
-metadata:
-  name: service-class-k8-app
-spec:
-  ports:
-    - name: http
-      port: 8082
-      protocol: TCP
-      targetPort: 8083
-  selector:
-    app: class-k8-app
-  externalIPs:
-    - 192.168.7.24
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: class-k8-app
-spec:
-  replicas: 1
-  revisionHistoryLimit: 10
-  selector:
-    matchLabels:
-      app: class-k8-app
-  template:
-    metadata:
-      labels:
-        app: class-k8-app
-    spec:
-      containers:
-        - image: rsucasas/class-k8-app:0.5
-          name: class-k8-app
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8083
-          env:
-            - name: K8s_API_URL
-              value: http://192.168.7.24:8001
-            - name: K8s_EXT_IP
-              value: 192.168.7.24
-          volumeMounts:
-            - mountPath: /tmp/store
-              name: class-k8-vol
-      volumes:
-         - name: class-k8-vol
-           persistentVolumeClaim:
-              claimName: pvc-1
-```
-
-#### 3. Server installation (Linux / Windows)
-
-1. Clone repository (_rotterdam_path_)
+    1. In OKD Web UI, go to selected project / namespace, i.e. the _default_ namespace, and select `Add to project > Deploy Image`
+    2. Select `Image Name`
+        - `atosclass/slalite:latest`
+          - Name: `rotterdam-slaliteXXX`
+          - Environment Variables: `UrlPrometheus`, `UrlRotterdam`, `MetricsPrometheus`
+        - `atosclass/rotterdam`
+          - Name: `rotterdam-caasXXX`
+          - Environment Variables: `OpenshiftOauthToken`
+    3. Deploy
+    4. Go to new application / deplopyment and select `Create Route`
+        - SLALite - Hostname: `rotterdam-slalite.192.168.7.28.xip.io`
+        - Rotterdam - Hostname: `rotterdam-cass.192.168.7.28.xip.io`
 
 -----------------------
 
@@ -198,7 +82,7 @@ spec:
 
 ##### 1. Installation in Kubernetes
 
-If the application was successfully deployed in K8s, it can be accessed in port `8082`. This can be changed in the _Service_ yaml (parameters _ports-port_ and _externalIPs_).
+If the application was successfully deployed in K8s or Openshift, it can be accessed in port `8082`. This can be changed in the _Service_ yaml (parameters _ports-port_ and _externalIPs_).
 
 ##### 2. Server installation (Linux / Windows)
 
@@ -209,7 +93,7 @@ cd rotterdam_path
 lein ring server
 ```
 
-By default the API can be accessed in port `8083`. This can be modified in `project.clj` file, before launching the application.
+By default the API can be accessed in port `8082`. This can be modified in `project.clj` file, before launching the application.
 
 
 ---------------------------------
