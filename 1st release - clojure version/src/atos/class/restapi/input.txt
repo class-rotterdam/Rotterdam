@@ -1,0 +1,62 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+FUNCTION: create-new-task
+  1. POST /apis/apps/v1/namespaces/{namespace}/deployments
+  2. POST /api/v1/namespaces/{namespace}/services
+  INPUT EXAMPLE:
+  {
+     "name": "adas-ped-detection",
+     "dock": "adas-pro",
+     "qos": {},
+     "containers": [{
+             "name": "adas-ped-distance",
+             "image": "docker.class.com/adas/adas_task_1:0.1.1",
+             "essential": true,
+             "ports": [
+                 {
+                     "containerPort": "80",
+                     "hostPort": "80",
+                     "protocol": "tcp",
+                 }
+             ],
+             "volumes": [
+                 {
+                     "name": "workdir",
+                     "mounthPath": "/usr/share/class/adas/"
+                 }
+             ],
+ 	          "environment": [
+ 	   	        {
+ 		           "name": "COMPS_VERSION",
+ 		           "value":"1.2.1"
+ 		           },
+ 	   	        {
+ 		           "name": "COMPS_MASTER_URL",
+ 		           "value":"<ES-URL>"
+ 		           }
+ 	          ]
+          }
+        ]
+    }
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+CREATE ROUTE:
+
+{
+  "apiVersion": "route.openshift.io/v1",
+  "kind": "Route",
+  "metadata": {
+    "name": "route-adas-my-nginx",
+    "namespace": "class"
+  },
+  "spec": {
+    "host": "adas-my-nginx.192.168.7.28.xip.io",
+    "port": {
+      "targetPort": "http"
+    },
+    "to": {
+      "kind": "Service",
+      "name": "serv-adas-my-nginx"
+    }
+  }
+}

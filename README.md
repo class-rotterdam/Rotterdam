@@ -9,7 +9,7 @@
 &copy; Atos Spain S.A. 2018
 
 [![License: Apache v2](https://img.shields.io/badge/License-Apache%20v2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![version](https://img.shields.io/badge/version-1.7.12-blue.svg)]()
+[![version](https://img.shields.io/badge/version-1.8.14-blue.svg)]()
 
 
 -----------------------
@@ -332,16 +332,5 @@ QoS templates used to define the SLAs associated to the tasks managed by Rotterd
 
 
 ### LICENSE
-
-Libraries used in this project:
-
-| library                         | license | url                                   | description |
-|---------------------------------|---------|---------------------------------------|-------------|
-| github.com/tidwall/buntdb | MIT | https://github.com/tidwall/buntdb | BuntDB is a low-level, in-memory, key/value store in pure Go |
-| github.com/nikunjy/rules/parser | MIT | https://github.com/nikunjy/rules | Rules engine written in golang with the help of antlr |
-| github.com/gorilla/mux | - | - | - |
-| github.com/gorilla/mux | - | - | - |
-| github.com/gorilla/mux | - | - | - |
-
 
 `Rotterdam` is licensed under [Apache License, version 2](LICENSE.TXT).

@@ -1,0 +1,42 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: service-class-k8-app
+spec:
+  ports:
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8083
+  selector:
+    app: class-k8-app
+  externalIPs:
+    - 192.168.7.24
+----
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: class-k8-app
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: class-k8-app
+  template:
+    metadata:
+      labels:
+        app: class-k8-app
+    spec:
+      containers:
+        - image: rsucasas/class-k8-app:0.4
+          name: class-k8-app
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8083
+          env:
+            - name: K8s_API_URL
+              value: http://192.168.7.24:8001
+            - name: K8s_EXT_IP
+              value: 192.168.7.24
