@@ -61,19 +61,13 @@ Rotterdam-CaaS (_version 0.0.9_) is a component of the European Project class (h
     - **ServerIP** (e.g.) "192.168.7.28"
     - **OpenshiftOauthToken** (e.g.) "eyJhbGciOiJSUzI1 ... 3MiOiJrdWJlcm5ldGVzL3Nlc"
 
-    The **SLALiteEndPoint** is used to automatically generate SLAs and to stop or terminate them. The SLALite component should also point to Rotterdam to send it the violations.
-
     1. In OKD Web UI, go to selected project / namespace, i.e. the _default_ namespace, and select `Add to project > Deploy Image`
     2. Select `Image Name`
-        - `atosclass/slalite:latest`
-          - Name: `rotterdam-slaliteXXX`
-          - Environment Variables: `UrlPrometheus`, `UrlRotterdam`, `MetricsPrometheus`
         - `atosclass/rotterdam`
           - Name: `rotterdam-caasXXX`
           - Environment Variables: `OpenshiftOauthToken`
     3. Deploy
     4. Go to new application / deplopyment and select `Create Route`
-        - SLALite - Hostname: `rotterdam-slalite.192.168.7.28.xip.io`
         - Rotterdam - Hostname: `rotterdam-cass.192.168.7.28.xip.io`
 
 -----------------------
