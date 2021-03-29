@@ -16,7 +16,7 @@
         "KubernetesEndPoint": "http://192.168.7.28:8001",
         "OpenshiftEndPoint": "https://192.168.7.28:8443",
         "HostIP": "192.168.7.28",
-        "OpenshiftOauthToken": "eyJhbGciOiJSUzI1NiI....QMOlOIwYBH2OTZ4L5CPyftiuExZEUBMCq2LPZFd-CpDZvrQG9eDD2l1EDp37bHwOrZ5VeNboaV7Iw",
+        "OpenshiftOauthToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6InJvYm90LXRva2VuLWI0Y3Y5Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6InJvYm90Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiNjMwMWI2ZjMtMjVmNS0xMWViLWI3NTctMDA1MDU2OTg2MDU5Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6cm9ib3QifQ.MuwqoCCXcoKHrmsMnsTHVIvPrh9RDqIILQKYgDb0NpIT991ZuUOSlL5hFBMC_omGeUd7HWLLovDLp1vmDvHDS04SLTJsKSs--d1IQHgQEJuotZgnaS8J31rGkY0P0S4uM2u5NHv7uoWHfIgXsTJflX9LRyyyUaHO27DrqD4s-eE3PM76tjdgAYX5h_h4yVqvOg9bqmRnceHSKGCSewlh7XwsGdIANwEmhBx04dzzbF_oXSNutQe-kOTuaMWK5bVBKA8S0bcZwrAMityzc1P12PfUGbF8gUUzuqWeU0pktO-Uo4K9kagndFXhRMPTVAmJSi4MR8lWJQcG-wW6ZZuxQQ",
         "SLALiteEndPoint": "http://rotterdam-slalite.192.168.7.28.xip.io",
         "PrometheusPushgatewayEndPoint": "http://pushgateway.192.168.7.28.xip.io"
     },
@@ -37,7 +37,8 @@
     }],
     "SLAs": {
         "CreationDate": "2019-01-01T00:00:00Z",
-        "ExpirationDate": "2024-01-01T00:00:00Z"
+        "ExpirationDate": "2024-01-01T00:00:00Z",
+        "DefaultInfrQoSRule": "Infr_Mem_2GB"
     },
     "Tasks": {
         "MaxReplicas": 30,

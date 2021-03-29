@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,19 +14,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 May 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package adaptation_engine
 
 import (
-	structs "atos/rotterdam/caas/common/structs"
+	structs "atos/rotterdam/globals/structs"
 	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -104,7 +104,7 @@ func ProcessViolation(w http.ResponseWriter, r *http.Request) {
 	log.Println("Rotterdam > Adaptation-Engine > engine [ProcessViolation] Reading params ...")
 	params := mux.Vars(r)
 	log.Println("Rotterdam > Adaptation-Engine > engine [ProcessViolation] guarantee..." + params["guarantee"])
-	log.Println("Rotterdam > Adaptation-Engine > engine [ProcessViolation] name..." + params["name"]) // task name
+	log.Println("Rotterdam > Adaptation-Engine > engine [ProcessViolation] id..." + params["id"]) // task name
 
 	if r.Body == nil {
 		log.Println("Rotterdam > Adaptation-Engine > engine [ProcessViolation] ERROR body is nil")
@@ -114,15 +114,18 @@ func ProcessViolation(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println("Rotterdam > Adaptation-Engine > engine [ProcessViolation] ERROR processing violation from SLA: ", err)
 		} else {
-			log.Println("Rotterdam > Adaptation-Engine > engine [ProcessViolation] Processes slice: " + strings.Join(Processes, ", "))
-			if !contains(Processes, params["guarantee"]) {
+			if len(Processes) == 0 || !contains(Processes, params["guarantee"]) {
 				Processes = append(Processes, params["guarantee"])
+				log.Println("Rotterdam > Adaptation-Engine > engine [ProcessViolation] Processes slice (1): " + strings.Join(Processes, ", "))
+				log.Println("Rotterdam > Adaptation-Engine > engine [ProcessViolation] Processing violation ... ")
 				Process(w, u)
-			} else {
-				time.Sleep(5 * time.Second)
 				Processes = remove(Processes, params["guarantee"])
+				log.Println("Rotterdam > Adaptation-Engine > engine [ProcessViolation] Processes slice (2): " + strings.Join(Processes, ", "))
+			} else {
+				log.Println("Rotterdam > Adaptation-Engine > engine [ProcessViolation] Violation processing already in progress... ")
+				//time.Sleep(5 * time.Second)
+				//Processes = remove(Processes, params["guarantee"])
 			}
-			log.Println("Rotterdam > Adaptation-Engine > engine [ProcessViolation] Processes slice: " + strings.Join(Processes, ", "))
 		}
 	}
 }

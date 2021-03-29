@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,8 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 20 Feb 2020
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package constants
@@ -29,6 +30,71 @@ DefaultDock default dock / namespace
 const DefaultDock = "class"
 
 /*
+TypeOpenshift "Openshift"
+*/
+const TypeOpenshift = "Openshift"
+
+/*
+TypeKubernetes "Kubernetes"
+*/
+const TypeKubernetes = "Kubernetes"
+
+/*
+TypeMicroK8s "MicroK8s"
+*/
+const TypeMicroK8s = "MicroK8s"
+
+/*
+TypeKubeless "Kubeless"
+*/
+const TypeKubeless = "Kubeless"
+
+/*
+TypeDocker "Docker"
+*/
+const TypeDocker = "Docker"
+
+/*
+DefaultType default type: Kubernetes / Openshift / Docker / MicroK8s
+*/
+const DefaultType = TypeOpenshift
+
+/*
+DefaultTasksMaxReplicas default max replicas per service
+*/
+const DefaultTasksMaxReplicas = 10
+
+/*
+DefaultTasksMinReplicas default min replicas per service
+*/
+const DefaultTasksMinReplicas = 1
+
+/*
+DefaultTasksMaxAllowed default max allowed
+*/
+const DefaultTasksMaxAllowed = 2
+
+/*
+DefaultTasksScaleFactor default scale factor
+*/
+const DefaultTasksScaleFactor = 2.5
+
+/*
+DefaultTasksValue default value
+*/
+const DefaultTasksValue = 2
+
+/*
+DefaultTasksComparator default Comparator
+*/
+const DefaultTasksComparator = "<"
+
+/*
+DefaultTasksAction default action
+*/
+const DefaultTasksAction = "scale_out"
+
+/*
 TypeTaskDefault default dock / namespace
 */
 const TypeTaskDefault = "default"
@@ -37,6 +103,11 @@ const TypeTaskDefault = "default"
 TypeTaskCOMPSs default dock / namespace
 */
 const TypeTaskCOMPSs = "compss"
+
+/*
+TypeFTaskDefault default function task
+*/
+const TypeFTaskDefault = "function"
 
 /*
 SLANotDefined No SLA defined in the task
@@ -57,3 +128,8 @@ const ClusterERROR = "ERROR"
 ClusterDEPLOYING ...
 */
 const ClusterDEPLOYING = "DEPLOYING"
+
+/*
+DefaultInfrQoSRule ...
+*/
+const DefaultInfrQoSRule = "Infr_Mem_2GB"

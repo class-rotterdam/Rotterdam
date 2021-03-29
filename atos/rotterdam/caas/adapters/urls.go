@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,16 +14,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 05 March 2020
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package adapters
 
 import (
+	log "atos/rotterdam/common/logs"
 	cfg "atos/rotterdam/config"
-	imec_db "atos/rotterdam/imec/db"
-	"log"
+	imec_db "atos/rotterdam/database/imec"
 )
 
 // Paths
@@ -78,10 +79,10 @@ func GetHostIP(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER) string {
 	ip := ""
 	if cluster == nil {
 		ip = cfg.Config.Clusters[0].HostIP
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetHostIP] ERROR Cluster is nil. Returning cluster[0] Host IP [" + ip + "] ...")
+		log.Println(pathLOG + "urls [GetHostIP] ERROR Cluster is nil. Returning cluster[0] Host IP [" + ip + "] ...")
 	} else {
 		ip = cluster.HostIP
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetHostIP] Host IP: " + ip)
+		log.Println(pathLOG + "urls [GetHostIP] Host IP: " + ip)
 	}
 	return ip
 }
@@ -97,13 +98,13 @@ func GetPathKubernetesDeployment(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, nam
 	url := ""
 	if cluster == nil {
 		url = defaultK8sEndPoint + "/apis/apps/v1/namespaces/" + namespace + "/deployments/" + task
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesDeployment] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
+		log.Println(pathLOG + "urls [GetPathKubernetesDeployment] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
 	} else if len(namespace) == 0 {
 		url = cluster.KubernetesEndPoint + PathKubernetesDeployment + "/" + task
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesDeployment] Using 'default' namespace. URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesDeployment] Using 'default' namespace. URL: " + url)
 	} else {
 		url = cluster.KubernetesEndPoint + "/apis/apps/v1/namespaces/" + namespace + "/deployments/" + task
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesDeployment] URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesDeployment] URL: " + url)
 	}
 	return url
 }
@@ -115,13 +116,13 @@ func GetPathKubernetesCreateDeployment(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTE
 	url := ""
 	if cluster == nil {
 		url = defaultK8sEndPoint + "/apis/apps/v1/namespaces/" + namespace + "/deployments"
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesCreateDeployment] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
+		log.Println(pathLOG + "urls [GetPathKubernetesCreateDeployment] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
 	} else if len(namespace) == 0 {
 		url = cluster.KubernetesEndPoint + PathKubernetesDeployment
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesCreateDeployment] Using 'default' namespace. URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesCreateDeployment] Using 'default' namespace. URL: " + url)
 	} else {
 		url = cluster.KubernetesEndPoint + "/apis/apps/v1/namespaces/" + namespace + "/deployments"
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesCreateDeployment] URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesCreateDeployment] URL: " + url)
 	}
 	return url
 }
@@ -133,13 +134,13 @@ func GetPathKubernetesDeleteDeployment(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTE
 	url := ""
 	if cluster == nil {
 		url = defaultK8sEndPoint + "/apis/apps/v1/namespaces/" + namespace + "/deployments/" + task
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesDeleteDeployment] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
+		log.Println(pathLOG + "urls [GetPathKubernetesDeleteDeployment] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
 	} else if len(namespace) == 0 {
 		url = cluster.KubernetesEndPoint + PathKubernetesDeployment + "/" + task
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesDeleteDeployment] Using 'default' namespace. URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesDeleteDeployment] Using 'default' namespace. URL: " + url)
 	} else {
 		url = cluster.KubernetesEndPoint + "/apis/apps/v1/namespaces/" + namespace + "/deployments/" + task
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesDeleteDeployment] URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesDeleteDeployment] URL: " + url)
 	}
 	return url
 }
@@ -152,14 +153,14 @@ GetPathKubernetesCreateService Path = "/api/v1/namespaces/" + namespace + "/serv
 func GetPathKubernetesCreateService(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace string) string {
 	url := ""
 	if cluster == nil {
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesCreateService] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
+		log.Println(pathLOG + "urls [GetPathKubernetesCreateService] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
 		url = defaultK8sEndPoint + "/api/v1/namespaces/" + namespace + "/services"
 	} else if len(namespace) == 0 {
 		url = cluster.KubernetesEndPoint + PathKubernetesService
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesCreateService] Using 'default' namespace. URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesCreateService] Using 'default' namespace. URL: " + url)
 	} else {
 		url = cluster.KubernetesEndPoint + "/api/v1/namespaces/" + namespace + "/services"
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesCreateService] URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesCreateService] URL: " + url)
 	}
 	return url
 }
@@ -171,13 +172,13 @@ func GetPathKubernetesService(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namesp
 	url := ""
 	if cluster == nil {
 		url = defaultK8sEndPoint + "/api/v1/namespaces/" + namespace + "/services/serv-" + task
-		log.Println("Rotterdam > CAAS > Adapters > urls [GetPathKubernetesService] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
+		log.Println(pathLOG + "urls [GetPathKubernetesService] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
 	} else if len(namespace) == 0 {
 		url = cluster.KubernetesEndPoint + PathKubernetesService + "/serv-" + task
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesService] Using 'default' namespace. URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesService] Using 'default' namespace. URL: " + url)
 	} else {
 		url = cluster.KubernetesEndPoint + "/api/v1/namespaces/" + namespace + "/services/serv-" + task
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesService] URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesService] URL: " + url)
 	}
 	return url
 }
@@ -191,13 +192,13 @@ func GetPathKubernetesScaleDeployment(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER
 	url := ""
 	if cluster == nil {
 		url = defaultK8sEndPoint + "/apis/apps/v1/namespaces/" + namespace + "/deployments/" + task + "/scale"
-		log.Println("Rotterdam > CAAS > Adapters > urls [GetPathKubernetesScaleDeployment] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
+		log.Println(pathLOG + "urls [GetPathKubernetesScaleDeployment] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
 	} else if len(namespace) == 0 {
 		url = cluster.KubernetesEndPoint + PathKubernetesDeployment + "/" + task + "/scale"
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesScaleDeployment] Using 'default' namespace. URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesScaleDeployment] Using 'default' namespace. URL: " + url)
 	} else {
 		url = cluster.KubernetesEndPoint + "/apis/apps/v1/namespaces/" + namespace + "/deployments/" + task + "/scale"
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesScaleDeployment] URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesScaleDeployment] URL: " + url)
 	}
 	return url
 }
@@ -211,14 +212,14 @@ func GetPathKubernetesPodsApp(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namesp
 	url := ""
 	if cluster == nil {
 		url = defaultK8sEndPoint + "/api/v1/namespaces/" + namespace + "/pods?labelSelector=app=" + task
-		log.Println("Rotterdam > CAAS > Adapters > urls [GetPathKubernetesPodsApp] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
+		log.Println(pathLOG + "urls [GetPathKubernetesPodsApp] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
 	} else if len(namespace) == 0 {
 		// 'default' namespace
 		url = cluster.KubernetesEndPoint + PathKubernetesPodsApp + "/" + task + "/scale"
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesPodsApp] Using 'default' namespace. URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesPodsApp] Using 'default' namespace. URL: " + url)
 	} else {
 		url = cluster.KubernetesEndPoint + "/api/v1/namespaces/" + namespace + "/pods?labelSelector=app=" + task
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesPodsApp] URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesPodsApp] URL: " + url)
 	}
 	return url
 }
@@ -230,13 +231,13 @@ func GetPathKubernetesPod(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace 
 	url := ""
 	if cluster == nil {
 		url = defaultK8sEndPoint + "/api/v1/namespaces/" + namespace + "/pods/" + podName
-		log.Println("Rotterdam > CAAS > Adapters > urls [GetPathKubernetesPod] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
+		log.Println(pathLOG + "urls [GetPathKubernetesPod] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
 	} else if len(namespace) == 0 {
 		url = cluster.KubernetesEndPoint + PathKubernetesPod + "/" + podName
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesPod] Using 'default' namespace. URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesPod] Using 'default' namespace. URL: " + url)
 	} else {
 		url = cluster.KubernetesEndPoint + "/api/v1/namespaces/" + namespace + "/pods/" + podName
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathKubernetesPod] URL: " + url)
+		log.Println(pathLOG + "urls [GetPathKubernetesPod] URL: " + url)
 	}
 	return url
 }
@@ -252,13 +253,13 @@ func GetPathOpenshiftRoute(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace
 	url := ""
 	if cluster == nil {
 		url = defaultOpenshiftEndPoint + "/apis/route.openshift.io/v1/namespaces/" + namespace + "/routes/route-" + task
-		log.Println("Rotterdam > CAAS > Adapters > urls [GetPathOpenshiftRoute] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
+		log.Println(pathLOG + "urls [GetPathOpenshiftRoute] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
 	} else if len(namespace) == 0 {
 		url = cluster.OpenshiftEndPoint + PathOpenshiftRoute + task
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathOpenshiftRoute] Using 'default' namespace. URL: " + url)
+		log.Println(pathLOG + "urls [GetPathOpenshiftRoute] Using 'default' namespace. URL: " + url)
 	} else {
 		url = cluster.OpenshiftEndPoint + "/apis/route.openshift.io/v1/namespaces/" + namespace + "/routes/route-" + task
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathOpenshiftRoute] URL: " + url)
+		log.Println(pathLOG + "urls [GetPathOpenshiftRoute] URL: " + url)
 	}
 	return url
 }
@@ -271,13 +272,13 @@ func GetPathOpenshiftRoutes(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespac
 	url := ""
 	if cluster == nil {
 		url = defaultOpenshiftEndPoint + "/apis/route.openshift.io/v1/namespaces/" + namespace + "/routes"
-		log.Println("Rotterdam > CAAS > Adapters > urls [GetPathOpenshiftRoutes] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
+		log.Println(pathLOG + "urls [GetPathOpenshiftRoutes] ERROR Cluster is nil. Returning cluster[0] URL [" + url + "] ...")
 	} else if len(namespace) == 0 {
 		url = cluster.OpenshiftEndPoint + PathOpenshiftRoutes
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathOpenshiftRoutes] Using 'default' namespace. URL: " + url)
+		log.Println(pathLOG + "urls [GetPathOpenshiftRoutes] Using 'default' namespace. URL: " + url)
 	} else {
 		url = cluster.OpenshiftEndPoint + "/apis/route.openshift.io/v1/namespaces/" + namespace + "/routes"
-		log.Println("Rotterdam > CAAS >  Adapters > urls [GetPathOpenshiftRoutes] URL: " + url)
+		log.Println(pathLOG + "urls [GetPathOpenshiftRoutes] URL: " + url)
 	}
 	return url
 }

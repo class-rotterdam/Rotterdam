@@ -4,7 +4,7 @@ info:
   title: Rotterdam CaaS
   description: Rotterdam CaaS REST API is responsible for the deployment of tasks and docks in a Kubernetes cluster
 schemes: [http]
-host: atos.rotterdam.caas.com
+host: rotterdam-caas.192.168.7.28.xip.io
 basePath: /api/v1
 consumes: [application/json]
 produces: [application/json]

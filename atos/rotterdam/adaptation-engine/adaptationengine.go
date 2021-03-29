@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,8 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 May 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package adaptation_engine
@@ -21,12 +22,16 @@ package adaptation_engine
 import (
 	caas "atos/rotterdam/caas"
 	"atos/rotterdam/caas/common"
-	structs "atos/rotterdam/caas/common/structs"
 	cfg "atos/rotterdam/config"
+	db "atos/rotterdam/database/caas"
+	db_imec "atos/rotterdam/database/imec"
+	structs "atos/rotterdam/globals/structs"
+	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // floatToString
@@ -59,6 +64,37 @@ func resetDeadLinesMissedMetric(clusterIndex int, id string, job string) (string
 }
 
 /*
+sendDataToPrometheusPushgateway data (workers) to prometheus via pushgateway
+*/
+func sendDataToPrometheusPushgateway(dbTask structs.DB_TASK, totalNewReplicas int) {
+	log.Println("Rotterdam > Adaptation-Engine > adaptation engine [sendDataToPrometheusPushgateway] Sending data to Pushgateway (Prometheus) ... ")
+
+	cl, err := db_imec.GetInfrByID(dbTask.ClusterId) // ([]DB_INFRASTRUCTURE_CLUSTER, error)
+	if err == nil {
+		pushgatewayURL := cl[0].PrometheusPushgatewayEndPoint
+
+		log.Println("Rotterdam > Adaptation-Engine > adaptation engine [sendDataToPrometheusPushgateway] Sending metrics to prometheus pushgateway [" + pushgatewayURL + "] ...")
+
+		s := `
+		workers_` + dbTask.Id + ` ` + strconv.Itoa(totalNewReplicas) + `
+		`
+
+		ioreader := strings.NewReader(s)
+
+		log.Println("Rotterdam > Adaptation-Engine > adaptation engine [sendDataToPrometheusPushgateway] POST " + pushgatewayURL + "/metrics/job/sla/instance/violations")
+		res, err := http.Post(pushgatewayURL+"/metrics/job/sla/instance/violations", "binary/octet-stream", ioreader)
+		if err != nil {
+			log.Println("Rotterdam > Adaptation-Engine > adaptation engine [sendDataToPrometheusPushgateway] Error (1): " + err.Error())
+		}
+		defer res.Body.Close()
+		message, _ := ioutil.ReadAll(res.Body)
+		log.Println("Rotterdam > Adaptation-Engine > adaptation engine [sendDataToPrometheusPushgateway] Response: " + string(message))
+	} else {
+		log.Println("Rotterdam > Adaptation-Engine > adaptation engine [sendDataToPrometheusPushgateway] Error (2): " + err.Error())
+	}
+}
+
+/*
 Process handles violatiokns from SLALite
 */
 func Process(w http.ResponseWriter, v structs.ViolationInfo) bool {
@@ -66,10 +102,10 @@ func Process(w http.ResponseWriter, v structs.ViolationInfo) bool {
 
 	// GET QoS
 	//dbtaskqos, err := common.ReadTaskQoSValue(v.Client_id)
-	dbtaskqos, err := common.ReadTaskQoSValue(v.Agreement_id)
+	dbtaskqos, err := db.ReadTaskQoSValue(v.Agreement_id)
 	if err == nil {
 		dbtaskqos.TotalViolations = dbtaskqos.TotalViolations + 1
-		err = common.SetTaskQoSValue(v.Client_id, *dbtaskqos)
+		err = db.SetTaskQoSValue(v.Client_id, *dbtaskqos)
 		if err != nil {
 			log.Println("Rotterdam > Adaptation-Engine > adaptation engine [Process] ERROR (1) updating TaskQoS")
 		}
@@ -83,7 +119,7 @@ func Process(w http.ResponseWriter, v structs.ViolationInfo) bool {
 			}
 
 			// ADAPT
-			dbtask, err := common.ReadTaskValue(v.Client_id)
+			dbtask, err := db.ReadTaskValue(v.Client_id)
 			var totalNewReplicas int
 			if err == nil {
 				log.Println("Rotterdam > Adaptation-Engine > adaptation engine [Process] dbtask.Replicas: " + strconv.Itoa(dbtask.Replicas))
@@ -112,7 +148,7 @@ func Process(w http.ResponseWriter, v structs.ViolationInfo) bool {
 				}
 
 				dbtaskqos.TotalViolations = 0
-				err = common.SetTaskQoSValue(v.Client_id, *dbtaskqos)
+				err = db.SetTaskQoSValue(v.Client_id, *dbtaskqos)
 				if err != nil {
 					log.Println("Rotterdam > Adaptation-Engine > adaptation engine [Process] ERROR (2) updating TaskQoS")
 				}
@@ -124,30 +160,14 @@ func Process(w http.ResponseWriter, v structs.ViolationInfo) bool {
 
 				// take action: scale up or down
 				caas.ScaleUpDown(*dbtask, totalNewReplicas)
+
+				// save to Prometheus / Pushgateway
+				sendDataToPrometheusPushgateway(*dbtask, totalNewReplicas)
+
 				return true
 			}
 		}
 	}
-
-	// EVALUATE
-	// "github.com/nikunjy/rules/parser"
-	// type obj map[string]interface{}
-	// parser.Evaluate("x eq 1", obj{"x": 1})
-	/*parser.Evaluate("x == 1", obj{"x": 1})
-	parser.Evaluate("x lt 1", obj{"x": 1})
-	parser.Evaluate("x < 1", obj{"x": 1})
-	parser.Evaluate("x gt 1", obj{"x": 1})
-	parser.Evaluate("x.a == 1 and x.b.c <= 2", obj{
-		"x": obj{
-			"a": 1,
-			"b": obj{
-				"c": 2,
-			},
-		},
-	})
-	parser.Evaluate("y == 4 and (x > 1)", obj{"x": 1})
-	parser.Evaluate("y == 4 and (x IN [1,2,3])", obj{"x": 1})
-	parser.Evaluate("y == 4 and (x eq 1.2.3)", obj{"x": "1.2.3"})*/
 
 	return false
 }

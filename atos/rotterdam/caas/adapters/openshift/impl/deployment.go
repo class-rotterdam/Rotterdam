@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,8 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 May 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package impl
@@ -22,9 +23,10 @@ import (
 	urls "atos/rotterdam/caas/adapters"
 	adapt_common "atos/rotterdam/caas/adapters/common"
 	common "atos/rotterdam/caas/common"
-	structs "atos/rotterdam/caas/common/structs"
 	cfg "atos/rotterdam/config"
-	imec_db "atos/rotterdam/imec/db"
+	db "atos/rotterdam/database/caas"
+	imec_db "atos/rotterdam/database/imec"
+	structs "atos/rotterdam/globals/structs"
 	"errors"
 	"log"
 	"strconv"
@@ -36,9 +38,9 @@ func k8sRoute(namespace string, mainPort int, mainPortName string, task structs.
 	log.Println("Rotterdam > CAAS > Adapters > Openshift > Deployment [k8sRoute] Generating 'route' json ...")
 	// TODO
 	// routePrefix := task.Name + "-" + task.Id
-	k8sRoute := common.StructNewRouteTemplate(task.ID, mainPort, mainPortName, cfg.Config.Clusters[0].HostIP) // returns *K8S_ROUTE
+	k8sRoute := structs.StructNewRouteTemplate(task.ID, mainPort, mainPortName, cfg.Config.Clusters[0].HostIP) // returns *K8S_ROUTE
 
-	strTxt, _ := common.CommRouteStructToString(*k8sRoute)
+	strTxt, _ := structs.CommRouteStructToString(*k8sRoute)
 	log.Println("Rotterdam > CAAS > Adapters > Openshift > Deployment [k8sRoute] [" + strTxt + "]")
 
 	// CALL to Kubernetes API to launch a new route
@@ -104,7 +106,7 @@ func DeployTask(task structs.CLASS_TASK) (string, error) {
 					Status:         "Deployed",
 					Replicas:       task.Replicas,
 					TaskDefinition: task}
-				common.SetTaskValue(task.ID, *dbtask)
+				db.SetTaskValue(task.ID, *dbtask)
 
 				return "ok", nil
 			}
@@ -149,7 +151,7 @@ func DeployTaskCompss(task structs.CLASS_TASK) (string, error) {
 			Status:         "Deployed",
 			Replicas:       task.Replicas,
 			TaskDefinition: task}
-		common.SetTaskValue(task.ID, *dbtask)
+		db.SetTaskValue(task.ID, *dbtask)
 
 		go func() {
 			log.Println("Rotterdam > CAAS > Adapters > Openshift > Deployment [DeployTaskCompss] Starting background tasks...")

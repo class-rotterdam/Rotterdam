@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,16 +14,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 May 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package impl
 
 import (
 	common "atos/rotterdam/caas/common"
-	structs "atos/rotterdam/caas/common/structs"
 	cfg "atos/rotterdam/config"
+	db "atos/rotterdam/database/caas"
+	structs "atos/rotterdam/globals/structs"
 	"log"
 )
 
@@ -49,7 +51,7 @@ func GetTaskAllInfo(idTask string) (structs.DB_TASK, error) {
 	log.Println("Rotterdam > CAAS > Adapters > Openshift > Operations [GetTaskAllInfo] Getting deployment with id=" + idTask + " ...")
 
 	// get task
-	dbTask, err := common.ReadTaskValue(idTask)
+	dbTask, err := db.ReadTaskValue(idTask)
 	if err == nil {
 		task := dbTask.TaskDefinition
 		clusterIndex := common.GetClusterIndex(task.Cluster)

@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,8 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 May 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package common
@@ -256,6 +257,21 @@ func HTTPPUTStruct(url string, auth bool, bodyJSON interface{}) (int, map[string
 	}
 
 	return status, objmap, nil
+}
+
+/*
+HTTPPUTString PUT request that returns a string (response)
+*/
+func HTTPPUTString(url string, auth bool, bodyJSON interface{}) (int, string, error) {
+	log.Println("Rotterdam > CAAS > http [HTTPPUTString] PUT request [" + url + "] ...")
+
+	status, data, err := HTTPPUT(url, auth, bodyJSON)
+	if err != nil {
+		log.Println("Rotterdam > CAAS > http [HTTPPUTString] ERROR (1)", err)
+		return status, "error", err
+	}
+
+	return status, string(data), nil
 }
 
 ///////////////////////////////////////////////////////////////////////////////

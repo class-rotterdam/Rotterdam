@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,35 +14,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 May 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package caas
 
 import (
+	adapt_engine "atos/rotterdam/adaptation-engine/monitoring"
 	adapters "atos/rotterdam/caas/adapters"
 	adpcommon "atos/rotterdam/caas/adapters/common"
 	k8s_adapter "atos/rotterdam/caas/adapters/kubernetes"
 	ops_adapter "atos/rotterdam/caas/adapters/openshift"
 	common "atos/rotterdam/caas/common"
-	structs "atos/rotterdam/caas/common/structs"
 	sla "atos/rotterdam/caas/sla"
+	log "atos/rotterdam/common/logs"
 	cfg "atos/rotterdam/config"
+	db "atos/rotterdam/database/caas"
+	db_imec "atos/rotterdam/database/imec"
 	constants "atos/rotterdam/globals/constants"
-	"bytes"
+	structs "atos/rotterdam/globals/structs"
 	"encoding/json"
 	"errors"
-	"io"
-	"log"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/lithammer/shortuuid"
 )
 
 // adapter
@@ -74,50 +75,6 @@ func init() {
 ///////////////////////////////////////////////////////////////////////////////
 
 /*
-generateID generates an Identifier based on a random string and the current time in nanoseconds
-*/
-func generateID() string {
-	// 1. ID generation
-	id := shortuuid.NewWithAlphabet("0123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwx") //id := txt + shortuuid.New()
-	id = strings.ToLower(id)                                                                     // Kubernetes doesnt allow uppercase names for deployments
-
-	// 2. time in nanoseconds is appended to ID
-	now := time.Now()      // current local time
-	nsec := now.UnixNano() // number of nanoseconds since January 1, 1970 UTC
-	id = id + strconv.FormatInt(nsec, 10)
-
-	return id
-}
-
-/*
-setClassStructDataDefaultValues
-*/
-func setClassStructDataDefaultValues(task *structs.CLASS_TASK, isCOMPs bool) { // *structs.CLASS_TASK {
-	if len(task.Cluster) == 0 {
-		task.Cluster = constants.MainClusterID
-	}
-	if len(task.Dock) == 0 {
-		task.Dock = common.GetClusterDefaultDock(task.Cluster)
-		//	task.Dock = constants.DefaultDock
-	}
-
-	if isCOMPs == true {
-		task.Type = constants.TypeTaskCOMPSs
-	} else if len(task.Type) == 0 || task.Type != constants.TypeTaskCOMPSs {
-		task.Type = constants.TypeTaskDefault
-	}
-}
-
-/*
-setClassStructDataAll
-*/
-func setClassStructDataAll(task *structs.CLASS_TASK, isCOMPs bool) { // *structs.CLASS_TASK {
-	task.ID = generateID()                         // ID
-	task.Created = time.Now().Format(time.RFC3339) // current local time
-	setClassStructDataDefaultValues(task, isCOMPs)
-}
-
-/*
 errorMessage
 */
 func errorMessage(w http.ResponseWriter, err error, method string) {
@@ -142,59 +99,93 @@ func okTaskMessage(w http.ResponseWriter, message string, method string, dbTask 
 		Task:        dbTask})
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
 /*
-validateJSONTask validates input (json) and generates a valid CLASS Task struct
+InitializeAdapter initialization function
 */
-func validateJSONTask(r *http.Request) (*structs.CLASS_TASK, error) {
-	log.Println("Rotterdam > CAAS > adapter [validateJsonTask] 'Duplicating' r.Body to use it multiple times with decoders ...")
-	rBody := r.Body
-	var buf bytes.Buffer
-	tee := io.TeeReader(rBody, &buf)
-
-	log.Println("Rotterdam > CAAS > adapter [validateJsonTask] Parsing default / old json definition ...")
-	decoder := json.NewDecoder(tee)
-	classTask, err := common.StructCheckClassTask(decoder)
-	if err == nil {
-		setClassStructDataAll(classTask, false)
-		log.Println("Rotterdam > CAAS > adapter [validateJsonTask] Task with name " + classTask.Name + " received. Task ID is [" + classTask.ID + "]. Type = " + classTask.Type)
-		return classTask, nil
+func InitializeAdapter() {
+	log.Println("Rotterdam > CAAS > adapter [InitializeAdapter] Initializing adapter for '" + cfg.Config.Clusters[0].Type + "' ...")
+	if cfg.Config.Clusters[0].Type == constants.TypeOpenshift {
+		log.Println("Rotterdam > CAAS > adapter [InitializeAdapter] Using Openshift adapter")
+		a = ops_adapter.OpenshiftAdapter{}
+	} else if cfg.Config.Clusters[0].Type == constants.TypeKubernetes || cfg.Config.Clusters[0].Type == constants.TypeMicroK8s {
+		log.Println("Rotterdam > CAAS > adapter [InitializeAdapter] Using Kubernetes adapter")
+		a = k8s_adapter.KubernetesAdapter{}
 	} else {
-		log.Println("Rotterdam > CAAS > adapter [validateJsonTask] Parsing new json definition (COMPSs) ...")
-
-		decoder = json.NewDecoder(&buf)
-		classCOMPSsTask, err := common.StructCheckClassCOMPSsTask(decoder)
-		if err == nil {
-			classCOMPSsTask.ID = generateID() // ID
-			classTask = structs.TransfCOMPSSTASKtoTASK(classCOMPSsTask)
-			log.Println("Rotterdam > CAAS > adapter [validateJsonTask] Task with name " + classCOMPSsTask.Name + " received. Task ID is [" + classCOMPSsTask.ID + "]. Type = " + classTask.Type + ". Using 'COMPSs' JSON format.")
-			setClassStructDataDefaultValues(classTask, true)
-			return classTask, nil
-		}
+		log.Println("Rotterdam > CAAS > adapter [InitializeAdapter] ERROR No adapter selected")
 	}
-
-	return nil, err
 }
 
 /*
-deploy
+GetAdapter initialization function
 */
-func deploy(w http.ResponseWriter, classTask *structs.CLASS_TASK) {
+func GetAdapter(idCluster string) (adapters.Adapter, error) {
+	t := common.GetClusterType(idCluster)
+
+	log.Println("Rotterdam > CAAS > adapter [GetAdapter] Getting adapter for '" + t + "' ...")
+	if t == constants.TypeOpenshift {
+		log.Println("Rotterdam > CAAS > adapter [GetAdapter] Using Openshift adapter")
+		return ops_adapter.OpenshiftAdapter{}, nil
+	} else if t == constants.TypeKubernetes || t == constants.TypeMicroK8s {
+		log.Println("Rotterdam > CAAS > adapter [GetAdapter] Using Kubernetes adapter")
+		return k8s_adapter.KubernetesAdapter{}, nil
+	}
+
+	log.Println("Rotterdam > CAAS > adapter [GetAdapter] ERROR No adapter selected")
+	return nil, errors.New("adapter: No adapter selected")
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+/*
+NotImplementedFunc Default Function for not implemented calls
+*/
+func NotImplementedFunc(w http.ResponseWriter, r *http.Request) {
+	log.Println("Rotterdam > CAAS > adapter [NotImplementedFunc] -Not implemented-")
+
+	json.NewEncoder(w).Encode(structs.ResponseCaaS{
+		Resp:        "ok",
+		Method:      "NotImplementedFunc",
+		Message:     "not implemented",
+		CaaSVersion: cfg.Config.CaaSVersion})
+}
+
+/*
+HomePath returns home path
+*/
+func HomePath(w http.ResponseWriter, r *http.Request) {
+	log.Println("Rotterdam > CAAS > adapter [HomePath] Returning SwaggerUI path ...")
+
+	json.NewEncoder(w).Encode(structs.ResponseCaaS{
+		Resp:        "ok",
+		Method:      "HomePath",
+		Message:     "UI URL: /swaggerui/",
+		CaaSVersion: cfg.Config.CaaSVersion})
+}
+
+/*
+DeployTask Deploys a task (k8s: deployment & service & volumes ...). Input example: view CLASS_TASK in structs.go
+*/
+func DeployTask(w http.ResponseWriter, classTask *structs.CLASS_TASK) {
+	log.Println("Rotterdam > CAAS > adapter [deploy] New Default Task Deployment")
+
 	adpt, err := GetAdapter(classTask.Cluster)
 	if err != nil {
 		errorMessage(w, err, "deploy")
 	}
 
-	log.Println("Rotterdam > CAAS > adapter [deploy] (2.) Deploying task [" + classTask.Name + "] ...")
+	log.Println("Rotterdam > CAAS > adapter [deploy] (1.) Deploying task [" + classTask.Name + "] ...")
 	_, err = adpt.DeployTask(*classTask)
 	if err == nil {
-		log.Println("Rotterdam > CAAS > adapter [deploy] (3.) Creating and starting SLA(s) ...")
+		log.Println("Rotterdam > CAAS > adapter [deploy] (2.) Creating and starting SLA(s) ...")
 		err = sla.CreateStartSLA(*classTask)
 		if err != nil {
-			log.Println("Rotterdam > CAAS > adapter [deploy] ERROR when creating and starting the SLA: ", err)
+			log.Error("Rotterdam > CAAS > adapter [deploy] ERROR when creating and starting the SLA: ", err)
 		}
 
 		// send response with DBTask
-		dbTask, err := common.ReadTaskValue(classTask.ID)
+		dbTask, err := db.ReadTaskValue(classTask.ID)
 		if err == nil {
 			okTaskMessage(w, "Task deployed", "deploy", *dbTask)
 		} else {
@@ -211,32 +202,70 @@ func deploy(w http.ResponseWriter, classTask *structs.CLASS_TASK) {
 }
 
 /*
-deployCOMPSs
+sendDataToPrometheusPushgateway data (workers) to prometheus via pushgateway
 */
-func deployCOMPSs(w http.ResponseWriter, classTask *structs.CLASS_TASK) {
+func sendDataToPrometheusPushgateway(idCluster string, classTask structs.CLASS_TASK) {
+	log.Println("Rotterdam > CAAS > adapter [sendDataToPrometheusPushgateway] Sending data to Pushgateway (Prometheus) ... ")
+
+	cl, err := db_imec.GetInfrByID(idCluster) // ([]DB_INFRASTRUCTURE_CLUSTER, error)
+	if err == nil {
+		pushgatewayURL := cl[0].PrometheusPushgatewayEndPoint
+
+		log.Println("Rotterdam > CAAS > adapter [sendDataToPrometheusPushgateway] Sending metrics to prometheus pushgateway [" + pushgatewayURL + "] ...")
+
+		s := `
+		workers_` + classTask.ID + ` ` + strconv.Itoa(classTask.Replicas) + `
+		`
+
+		ioreader := strings.NewReader(s)
+
+		//log.Println("Rotterdam > CAAS > adapter [sendDataToPrometheusPushgateway] POST " + pushgatewayURL + "/metrics/job/sla/instance/violations")
+		//res, err := http.Post(pushgatewayURL+"/metrics/job/sla/instance/violations", "binary/octet-stream", ioreader)
+		log.Println("Rotterdam > CAAS > adapter [sendDataToPrometheusPushgateway] POST " + pushgatewayURL + "/metrics/job/compss")
+		res, err := http.Post(pushgatewayURL+"/metrics/job/compss", "binary/octet-stream", ioreader)
+		if err != nil {
+			log.Println("Rotterdam > CAAS > adapter [sendDataToPrometheusPushgateway] Error (1): " + err.Error())
+		}
+		defer res.Body.Close()
+		message, _ := ioutil.ReadAll(res.Body)
+		log.Println("Rotterdam > CAAS > adapter [sendDataToPrometheusPushgateway] Response: " + string(message))
+	} else {
+		log.Println("Rotterdam > CAAS > adapter [sendDataToPrometheusPushgateway] Error (2): " + err.Error())
+	}
+}
+
+/*
+DeployTaskCOMPSs Deploys a COMPSs task (k8s: deployment & service & volumes ...). Input example: view CLASS_TASK in structs.go
+*/
+func DeployTaskCOMPSs(w http.ResponseWriter, classTask *structs.CLASS_TASK) {
+	log.Println("Rotterdam > CAAS > adapter [deployCOMPSs] New COMPSs Task Deployment")
+
 	adpt, err := GetAdapter(classTask.Cluster)
 	if err != nil {
 		errorMessage(w, err, "deployCOMPSs")
 	}
 
-	log.Println("Rotterdam > CAAS > adapter [deployCOMPSs] (2.) Deploying task " + classTask.Name + " ...")
+	// call to predictive SLA
+	log.Println("Rotterdam > CAAS > adapter [deployCOMPSs] (0.) Call to predictive SLA ...")
+	classTask, _ = sla.Predict(classTask)
+
+	// start deployment
+	log.Println("Rotterdam > CAAS > adapter [deployCOMPSs] (1.) Deploying task " + classTask.Name + " ...")
 	_, err = adpt.DeployTaskCompss(*classTask)
 	if err == nil {
-		log.Println("Rotterdam > CAAS > adapter [deployCOMPSs] (3.) Adding new Prometheus metric ...")
-		err = sla.AddPromMetric("deadlines_missed_" + classTask.ID)
-		if err != nil {
-			log.Println("Rotterdam > CAAS > adapter [deployCOMPSs] ERROR adding a new Prometheus metric ", err)
-		}
-
-		log.Println("Rotterdam > CAAS > adapter [deployCOMPSs] (4.) Creating and starting SLA ...")
+		log.Println("Rotterdam > CAAS > adapter [deployCOMPSs] (2.) Creating and starting SLA ...")
 		err = sla.CreateStartCOMPSsSLA(*classTask)
 		if err != nil {
-			log.Println("Rotterdam > CAAS > adapter [deployCOMPSs] ERROR creating and starting the SLA: ", err)
+			log.Error("Rotterdam > CAAS > adapter [deployCOMPSs] ERROR creating and starting the SLA: ", err)
 		}
 
 		// send response with DBTask
-		dbTask, err := common.ReadTaskValue(classTask.ID)
+		dbTask, err := db.ReadTaskValue(classTask.ID)
 		if err == nil {
+			// send "workers" information to Prometheus / Pushgateway
+			sendDataToPrometheusPushgateway(classTask.Cluster, *classTask)
+
+			// response
 			okTaskMessage(w, "Task deployed", "deployCOMPSs", *dbTask)
 		} else {
 			json.NewEncoder(w).Encode(structs.ResponseCaaSTask{
@@ -251,146 +280,72 @@ func deployCOMPSs(w http.ResponseWriter, classTask *structs.CLASS_TASK) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-/*
-InitializeAdapter initialization function
-*/
-func InitializeAdapter() {
-	log.Println("Rotterdam > CAAS > adapter [InitializeAdapter] Initializing adapter for '" + cfg.Config.Clusters[0].Type + "' ...")
-	if cfg.Config.Clusters[0].Type == "Openshift" {
-		log.Println("Rotterdam > CAAS > adapter [InitializeAdapter] Using Openshift adapter")
-		a = ops_adapter.OpenshiftAdapter{}
-	} else if cfg.Config.Clusters[0].Type == "Kubernetes" {
-		log.Println("Rotterdam > CAAS > adapter [InitializeAdapter] Using Kubernetes adapter")
-		a = k8s_adapter.KubernetesAdapter{}
-	} else {
-		log.Println("Rotterdam > CAAS > adapter [InitializeAdapter] ERROR No adapter selected")
-	}
-}
-
-/*
-GetAdapter initialization function
-*/
-func GetAdapter(idCluster string) (adapters.Adapter, error) {
-	t := common.GetClusterType(idCluster)
-
-	log.Println("Rotterdam > CAAS > adapter [GetAdapter] Getting adapter for '" + t + "' ...")
-	if t == "Openshift" {
-		log.Println("Rotterdam > CAAS > adapter [GetAdapter] Using Openshift adapter")
-		return ops_adapter.OpenshiftAdapter{}, nil
-	} else if t == "Kubernetes" || t == "microk8s" {
-		log.Println("Rotterdam > CAAS > adapter [GetAdapter] Using Kubernetes adapter")
-		return k8s_adapter.KubernetesAdapter{}, nil
-	}
-
-	log.Println("Rotterdam > CAAS > adapter [GetAdapter] ERROR No adapter selected")
-	return nil, errors.New("adapter: No adapter selected")
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
 /*
 DeployRotterdamTask Deploys a task (k8s: deployment & service & volumes ...). Input example: view CLASS_TASK in structs.go
 */
-func DeployRotterdamTask(w http.ResponseWriter, r *http.Request) {
-	log.Println("####################################################################################")
-	log.Println("### POST /api/v1/tasks     <<New Task Deployment (undefined type)>>")
+func DeployRotterdamTask(w http.ResponseWriter, classTask *structs.CLASS_TASK) {
+	log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] New Task Deployment (undefined type)")
 
-	log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] (1.) Validating json ...")
-	classTask, err := validateJSONTask(r)
-	if err == nil {
-		classTaskStr, _ := common.CommClassStructToString(*classTask)
-		log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] Parsed CLASS TASK object (string): " + classTaskStr)
+	// Task (default, compss)
+	classTaskStr, _ := structs.CommClassStructToString(*classTask)
+	log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] Parsed CLASS TASK object (string): " + classTaskStr)
 
-		if classTask.Type == constants.TypeTaskCOMPSs {
-			log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] COMPSs task ...")
-			deployCOMPSs(w, classTask)
+	// Check cluster
+	log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] Checking cluster status ... ")
+	status := adapt_engine.GetClusterStatus(classTask.Cluster)
+	if status != "ok" {
+		log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] Looking for alternative clusters ... ")
+		// change cluster if possible
+		idNewCluster := adapt_engine.GetAvailableCluster()
+		if idNewCluster != "Not-Found" {
+			classTask.Cluster = idNewCluster
+			log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] New cluster selected for task deployment: " + idNewCluster)
 		} else {
-			log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] Default task ...")
-			deploy(w, classTask)
+			log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] No alternative cluster found. Using cluster " + classTask.Cluster)
 		}
-	} else {
-		log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] ERROR JSON not valid")
-		errorMessage(w, err, "DeployRotterdamTask")
 	}
-}
 
-/*
-DeployTask Deploys a task (k8s: deployment & service & volumes ...). Input example: view CLASS_TASK in structs.go
-*/
-func DeployTask(w http.ResponseWriter, r *http.Request) {
-	log.Println("####################################################################################")
-	log.Println("### New Default Task Deployment")
-
-	log.Println("Rotterdam > CAAS > adapter [DeployTask] (1.) Validating json ...")
-	classTask, err := validateJSONTask(r)
-	if err != nil {
-		errorMessage(w, err, "DeployTask")
+	if classTask.Type == constants.TypeTaskCOMPSs {
+		log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] COMPSs task ...")
+		DeployTaskCOMPSs(w, classTask)
 	} else {
-		deploy(w, classTask)
-	}
-}
-
-/*
-DeployTaskCOMPSs Deploys a COMPSs task (k8s: deployment & service & volumes ...). Input example: view CLASS_TASK in structs.go
-*/
-func DeployTaskCOMPSs(w http.ResponseWriter, r *http.Request) {
-	log.Println("####################################################################################")
-	log.Println("### New COMPSs Task Deployment")
-
-	log.Println("Rotterdam > CAAS > adapter [DeployTaskCOMPSs] (1.) Validating json ...")
-	classTask, err := validateJSONTask(r)
-	if err != nil {
-		errorMessage(w, err, "DeployTaskCOMPSs")
-	} else {
-		deployCOMPSs(w, classTask)
+		log.Println("Rotterdam > CAAS > adapter [DeployRotterdamTask] Default task ...")
+		DeployTask(w, classTask)
 	}
 }
 
 /*
 RemoveRotterdamTask Deletes a task
 */
-func RemoveRotterdamTask(w http.ResponseWriter, r *http.Request) {
-	log.Println("####################################################################################")
-	log.Println("### DELETE /api/v1/tasks/{id}    <<Task termination (v2)>>")
-
-	log.Println("Rotterdam > CAAS > adapter [RemoveRotterdamTask] (1.) Reading input params ...")
-	params := mux.Vars(r)
-
-	log.Println("Rotterdam > CAAS > adapter [RemoveRotterdamTask] (2.) Getting task [" + params["id"] + "] from DB ...")
-	dbTask, err := common.ReadTaskValue(params["id"])
-	if err == nil {
-		log.Println("Rotterdam > CAAS > adapter [RemoveRotterdamTask] (3.) Getting adapter for cluster [" + dbTask.ClusterId + "]  ...")
-		adpt, err := GetAdapter(dbTask.ClusterId)
-		if err != nil {
-			errorMessage(w, err, "RemoveRotterdamTask")
-		} else {
-			log.Println("Rotterdam > CAAS > adapter [RemoveRotterdamTask] (4.) Removing task " + dbTask.Id + " ...")
-			resp, agreementID, err := adpt.RemoveTask(*dbTask)
-			if err == nil {
-				if agreementID == constants.SLANotDefined {
-					log.Println("Rotterdam > CAAS > adapter [RemoveRotterdamTask] (5.) SLA(s) not defined")
-				} else {
-					log.Println("Rotterdam > CAAS > adapter [RemoveRotterdamTask] (5.) Stopping and terminating SLA(s) ...")
-					sla.StopTerminateSLA(dbTask.Id)
-				}
-
-				log.Println("Rotterdam > CAAS > adapter [RemoveRotterdamTask] (6.) Deleting DBTask ...")
-				common.DBDeleteTask(dbTask.Id)
-
-				json.NewEncoder(w).Encode(structs.ResponseCaaS{
-					Resp:        "ok",
-					Method:      "RemoveRotterdamTask",
-					Message:     "Task removed",
-					CaaSVersion: cfg.Config.CaaSVersion,
-					Content:     resp})
-			} else {
-				errorMessage(w, err, "RemoveRotterdamTask")
-			}
-		}
-	} else {
+func RemoveRotterdamTask(w http.ResponseWriter, dbTask *structs.DB_TASK) {
+	// Task (default, compss)
+	log.Println("Rotterdam > CAAS > adapter [RemoveRotterdamTask] (1.) Getting adapter for cluster [" + dbTask.ClusterId + "]  ...")
+	adpt, err := GetAdapter(dbTask.ClusterId)
+	if err != nil {
 		errorMessage(w, err, "RemoveRotterdamTask")
+	} else {
+		log.Println("Rotterdam > CAAS > adapter [RemoveRotterdamTask] (2.) Removing task " + dbTask.Id + " ...")
+		resp, agreementID, err := adpt.RemoveTask(*dbTask)
+		if err == nil {
+			if agreementID == constants.SLANotDefined {
+				log.Println("Rotterdam > CAAS > adapter [RemoveRotterdamTask] (3.) SLA(s) not defined")
+			} else {
+				log.Println("Rotterdam > CAAS > adapter [RemoveRotterdamTask] (3.) Stopping and terminating SLA(s) ...")
+				sla.StopTerminateSLA(dbTask.Id)
+			}
+
+			log.Println("Rotterdam > CAAS > adapter [RemoveRotterdamTask] (4.) Deleting DBTask ...")
+			db.DeleteTask(dbTask.Id)
+
+			json.NewEncoder(w).Encode(structs.ResponseCaaS{
+				Resp:        "ok",
+				Method:      "RemoveRotterdamTask",
+				Message:     "Task removed",
+				CaaSVersion: cfg.Config.CaaSVersion,
+				Content:     resp})
+		} else {
+			errorMessage(w, err, "RemoveRotterdamTask")
+		}
 	}
 }
 
@@ -407,7 +362,7 @@ func RemoveTask(w http.ResponseWriter, r *http.Request) {
 	log.Println("Rotterdam > CAAS > adapter [RemoveTask] dock=" + params["dock"] + ", id=" + params["id"])
 
 	log.Println("Rotterdam > CAAS > adapter [RemoveTask] (2.) Getting task [" + params["id"] + "] from DB ...")
-	dbTask, err := common.ReadTaskValue(params["id"])
+	dbTask, err := db.ReadTaskValue(params["id"])
 	if err == nil {
 		log.Println("Rotterdam > CAAS > adapter [RemoveTask] (2.) Removing task " + params["id"] + " ...")
 		resp, agreementID, err := a.RemoveTask(*dbTask)
@@ -420,7 +375,7 @@ func RemoveTask(w http.ResponseWriter, r *http.Request) {
 			}
 
 			log.Println("Rotterdam > CAAS > adapter [RemoveTask] (4.) Deleting DBTask ...")
-			common.DBDeleteTask(dbTask.Id)
+			db.DeleteTask(dbTask.Id)
 
 			json.NewEncoder(w).Encode(structs.ResponseCaaS{
 				Resp:        "ok",
@@ -487,7 +442,7 @@ func LoadQoSDefinitions(w http.ResponseWriter, r *http.Request) {
 	log.Println("### POST /api/v1/qos/definitions")
 
 	log.Println("Rotterdam > CAAS > adapter [LoadQoSDefinitions] Loading QoS definitions list ...")
-	res, err := common.StructCheckClasQoSTemplateList(r)
+	res, err := structs.StructCheckClasQoSTemplateList(r)
 
 	if err == nil {
 		cfg.QosTemplates = *res
@@ -576,14 +531,14 @@ func GetDockTasks(w http.ResponseWriter, r *http.Request) {
 GetTask Gets a task
 */
 func GetTask(w http.ResponseWriter, r *http.Request) {
-	log.Println("####################################################################################")
-	log.Println("### GET /api/v1/tasks/{id}")
+	log.Trace("####################################################################################")
+	log.Trace("### GET /api/v1/tasks/{id}")
 
-	log.Println("Rotterdam > CAAS > adapter [GetTask] Reading input params ...")
+	log.Trace("Rotterdam > CAAS > adapter [GetTask] Reading input params ...")
 	params := mux.Vars(r)
-	log.Println("Rotterdam > CAAS > adapter [GetTask] dock=" + params["dock"] + ", id=" + params["id"])
+	log.Trace("Rotterdam > CAAS > adapter [GetTask] dock=" + params["dock"] + ", id=" + params["id"])
 
-	log.Println("Rotterdam > CAAS > adapter [GetTask] (1.) Getting task " + params["id"] + " ...")
+	log.Trace("Rotterdam > CAAS > adapter [GetTask] (1.) Getting task " + params["id"] + " ...")
 	dbTask, err := adpcommon.GetTask(params["id"])
 	if err == nil {
 		okTaskMessage(w, "Task retrieved", "GetTask", dbTask)
@@ -604,7 +559,6 @@ func GetTaskAllInfo(w http.ResponseWriter, r *http.Request) {
 	log.Println("Rotterdam > CAAS > adapter [GetTaskAllInfo] id=" + params["id"])
 
 	log.Println("Rotterdam > CAAS > adapter [GetTaskAllInfo] (1.) Getting task " + params["id"] + " ...")
-	//dbTask, err := a.GetTaskAllInfo(params["id"])
 	dbTask, err := adpcommon.GetTask(params["id"])
 	if err == nil {
 		adapter, err := GetAdapter(dbTask.ClusterId)
@@ -612,9 +566,8 @@ func GetTaskAllInfo(w http.ResponseWriter, r *http.Request) {
 			adapter.GetTaskAllInfo(params["id"])
 			okTaskMessage(w, "Task retrieved", "GetTaskAllInfo", dbTask)
 		}
-	} //else {
+	}
 	errorMessage(w, err, "GetTaskAllInfo")
-	//}
 }
 
 /*

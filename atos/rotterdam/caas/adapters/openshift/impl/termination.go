@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,8 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 May 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package impl
@@ -22,8 +23,8 @@ import (
 	urls "atos/rotterdam/caas/adapters"
 	adapt_common "atos/rotterdam/caas/adapters/common"
 	common "atos/rotterdam/caas/common"
-	structs "atos/rotterdam/caas/common/structs"
-	imec_db "atos/rotterdam/imec/db"
+	imec_db "atos/rotterdam/database/imec"
+	structs "atos/rotterdam/globals/structs"
 	"errors"
 	"log"
 	"strconv"

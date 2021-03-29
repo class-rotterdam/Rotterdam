@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,21 +14,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 Feb 2020
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package infrastructures
 
 import (
-	"log"
+	log "atos/rotterdam/common/logs"
 )
 
 /*
 Save ...
 */
 func Save() (string, error) {
-	log.Println("Rotterdam > IMEC > infrastructures [Save] ...")
+	log.Println(pathLOG + "[Save] ...")
 
 	return "", nil
 }
@@ -35,7 +36,7 @@ func Save() (string, error) {
 Get ...
 */
 func Get() (string, error) {
-	log.Println("Rotterdam > IMEC > infrastructures [Get] ...")
+	log.Println(pathLOG + "[Get] ...")
 
 	return "", nil
 }
@@ -44,7 +45,7 @@ func Get() (string, error) {
 Update ...
 */
 func Update() (string, error) {
-	log.Println("Rotterdam > IMEC > infrastructures [Update] ...")
+	log.Println(pathLOG + "[Update] ...")
 
 	return "", nil
 }
@@ -53,7 +54,7 @@ func Update() (string, error) {
 Delete ...
 */
 func Delete() (string, error) {
-	log.Println("Rotterdam > IMEC > infrastructures [Delete] ...")
+	log.Println(pathLOG + "[Delete] ...")
 
 	return "", nil
 }

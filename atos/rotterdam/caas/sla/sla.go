@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,23 +14,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 May 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package sla
 
 import (
 	"atos/rotterdam/caas/common"
-	structs "atos/rotterdam/caas/common/structs"
+	log "atos/rotterdam/common/logs"
 	cfg "atos/rotterdam/config"
+	db "atos/rotterdam/database/caas"
 	constants "atos/rotterdam/globals/constants"
-	"log"
+	structs "atos/rotterdam/globals/structs"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 )
+
+// path used in logs
+const pathLOG string = "Rotterdam > CAAS > SLA : "
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -36,7 +41,7 @@ import (
 createCOMPSsSLAAgreemnt ...
 */
 func createCOMPSsSLAAgreemnt(task structs.CLASS_TASK, cnt int) (string, error) {
-	log.Println("Rotterdam > CAAS > SLA [createCOMPSsSLAAgreemnt] Generating COMPSs SLA agrement for task [" + task.ID + "] ...")
+	log.Println(pathLOG + "[createCOMPSsSLAAgreemnt] Generating COMPSs SLA agrement for task [" + task.ID + "] ...")
 
 	// Create uuid
 	agreementID := strings.Replace(task.ID, "-", "_", -1)
@@ -70,21 +75,21 @@ func createCOMPSsSLAAgreemnt(task structs.CLASS_TASK, cnt int) (string, error) {
 		jsonAgreement)
 
 	if err != nil {
-		log.Println("Rotterdam > CAAS > SLA [createCOMPSsSLAAgreemnt] ERROR", err)
+		log.Error(pathLOG+"[createCOMPSsSLAAgreemnt] ERROR", err)
 		return "Error creating the SLA Agreement", err
 	}
 
 	// Save QoS in DB
 	if dbtaskqos != nil {
-		err = common.SetTaskQoSValue(task.ID, *dbtaskqos)
+		err = db.SetTaskQoSValue(task.ID, *dbtaskqos)
 		if err != nil {
-			log.Println("Rotterdam > CAAS > SLA [createCOMPSsSLAAgreemnt] ERROR creating QoS:", err)
+			log.Error(pathLOG+"[createCOMPSsSLAAgreemnt] ERROR creating QoS:", err)
 		}
 	} else {
-		log.Println("Rotterdam > CAAS > SLA [createCOMPSsSLAAgreemnt] ERROR creating QoS. dbtaskqos is nil")
+		log.Println(pathLOG + "[createCOMPSsSLAAgreemnt] ERROR creating QoS. dbtaskqos is nil")
 	}
 
-	log.Println("Rotterdam > CAAS > SLA [createCOMPSsSLAAgreemnt] RESPONSE: OK (" + strconv.Itoa(status) + ")")
+	log.Println(pathLOG + "[createCOMPSsSLAAgreemnt] RESPONSE: OK (" + strconv.Itoa(status) + ")")
 
 	return agreementID, nil
 }
@@ -94,10 +99,10 @@ createSLAAgreemnt ...
 */
 func createSLAAgreemnt(task structs.CLASS_TASK) (string, error) {
 	if task.Qos.Name == "" || task.Qos.Name == "None" {
-		log.Println("Rotterdam > CAAS > SLA [createSLAAgreemnt] No SLA agrement generation for task [" + task.ID + "]. QoS value is None.")
+		log.Println(pathLOG + "[createSLAAgreemnt] No SLA agrement generation for task [" + task.ID + "]. QoS value is None.")
 		return constants.SLANotDefined, nil
 	}
-	log.Println("Rotterdam > CAAS > SLA [createSLAAgreemnt] Generating SLA agrement for task [" + task.ID + "] ...")
+	log.Println(pathLOG + "[createSLAAgreemnt] Generating SLA agrement for task [" + task.ID + "] ...")
 
 	// Create uuid
 	agreementID := strings.Replace(task.ID, "-", "_", -1)
@@ -109,6 +114,7 @@ func createSLAAgreemnt(task structs.CLASS_TASK) (string, error) {
 	jsonAgreement.ID = agreementID
 	jsonAgreement.Name = agreementID + "_" + task.Qos.Name
 	jsonAgreement.State = "started"
+	jsonAgreement.Location = task.Cluster
 	jsonAgreement.Details.ID = agreementID
 	jsonAgreement.Details.Name = agreementID + "_" + task.Qos.Name
 	jsonAgreement.Details.Type = "agreement"
@@ -124,9 +130,9 @@ func createSLAAgreemnt(task structs.CLASS_TASK) (string, error) {
 	jsonAgreement.Details.Guarantees = resGuarantees
 
 	// DEBUG
-	strTxt, err := common.CommSLAStructToString(*jsonAgreement)
+	strTxt, err := structs.CommSLAStructToString(*jsonAgreement)
 	if err == nil {
-		log.Println("Rotterdam > CAAS > SLA [createSLAAgreemnt] jsonAgreement: " + strTxt)
+		log.Println(pathLOG + "[createSLAAgreemnt] jsonAgreement: " + strTxt)
 	}
 
 	// Call to SLALite API to create the agreement
@@ -137,21 +143,87 @@ func createSLAAgreemnt(task structs.CLASS_TASK) (string, error) {
 		jsonAgreement)
 
 	if err != nil {
-		log.Println("Rotterdam > CAAS > SLA [createSLAAgreemnt] ERROR", err)
+		log.Error(pathLOG+"[createSLAAgreemnt] ERROR", err)
 		return "Error creating the SLA Agreement", err
 	}
 
 	// Save QoS in DB
 	if dbtaskqos != nil {
-		err = common.SetTaskQoSValue(task.ID, *dbtaskqos)
+		err = db.SetTaskQoSValue(task.ID, *dbtaskqos)
 		if err != nil {
-			log.Println("Rotterdam > CAAS > SLA [createSLAAgreemnt] ERROR creating QoS:", err)
+			log.Error(pathLOG+"[createSLAAgreemnt] ERROR creating QoS:", err)
 		}
 	} else {
-		log.Println("Rotterdam > CAAS > SLA [createSLAAgreemnt] ERROR creating QoS. dbtaskqos is nil")
+		log.Println(pathLOG + "[createSLAAgreemnt] ERROR creating QoS. dbtaskqos is nil")
 	}
 
-	log.Println("Rotterdam > CAAS > SLA [createSLAAgreemnt] RESPONSE: OK (" + strconv.Itoa(status) + ")")
+	log.Println(pathLOG + "[createSLAAgreemnt] RESPONSE: OK (" + strconv.Itoa(status) + ")")
+
+	return agreementID, nil
+}
+
+/*
+createInfrSLA ...
+*/
+func createInfrSLA(cluster string, qos structs.CLASS_TASK_QOS) (string, error) {
+	log.Println(pathLOG + "[createInfrSLA] Generating SLA agrement for CLUSTER [" + cluster + "] ...")
+
+	// Create uuid
+	now := time.Now()      // current local time
+	nsec := now.UnixNano() // number of nanoseconds since January 1, 1970 UTC
+	agreementID := cluster + strconv.FormatInt(nsec, 10)
+
+	// Create SLA Agreement structure
+	var jsonAgreement *structs.SLA_AGREEMENT
+	jsonAgreement = new(structs.SLA_AGREEMENT)
+
+	jsonAgreement.ID = agreementID
+	jsonAgreement.Name = cluster //agreementID + "_INFR_SLA"
+	jsonAgreement.State = "started"
+	jsonAgreement.Location = cluster
+	jsonAgreement.Details.ID = agreementID
+	jsonAgreement.Details.Name = cluster //agreementID + "_INFR_SLA"
+	jsonAgreement.Details.Type = "agreement"
+	jsonAgreement.Details.Provider.ID = "CLASSProvider"
+	jsonAgreement.Details.Provider.Name = "CLASS Platform"
+	jsonAgreement.Details.Client.ID = cluster
+	jsonAgreement.Details.Client.Name = "CLASS Cluster " + cluster
+	jsonAgreement.Details.Creation = cfg.Config.SLAs.CreationDate     //"2019-01-01T00:00:00Z"
+	jsonAgreement.Details.Expiration = cfg.Config.SLAs.ExpirationDate //"2025-01-01T00:00:00Z"
+
+	resGuarantees, dbtaskqos, _ := CreateInfrGuarantees(cluster, qos)
+
+	jsonAgreement.Details.Guarantees = resGuarantees
+
+	// DEBUG
+	strTxt, err := structs.CommSLAStructToString(*jsonAgreement)
+	if err == nil {
+		log.Println(pathLOG + "[createInfrSLA] jsonAgreement: " + strTxt)
+	}
+
+	// Call to SLALite API to create the agreement
+	// ==> curl -k -X POST -d @agreement.json http://rotterdam-slalite60.192.168.7.28.xip.io/agreements
+	status, _, err := common.HTTPPOST(
+		cfg.Config.Clusters[0].SLALiteEndPoint+"/agreements",
+		false,
+		jsonAgreement)
+
+	if err != nil {
+		log.Error(pathLOG+"[createInfrSLA] ERROR", err)
+		return "Error creating the SLA Agreement", err
+	}
+
+	// Save QoS in DB
+	if dbtaskqos != nil {
+		err = db.SetTaskQoSValue(cluster, *dbtaskqos)
+		if err != nil {
+			log.Error(pathLOG+"[createInfrSLA] ERROR creating QoS:", err)
+		}
+	} else {
+		log.Println(pathLOG + "[createInfrSLA] ERROR creating QoS. dbtaskqos is nil")
+	}
+
+	log.Println(pathLOG + "[createInfrSLA] RESPONSE: OK (" + strconv.Itoa(status) + ")")
 
 	return agreementID, nil
 }
@@ -160,16 +232,16 @@ func createSLAAgreemnt(task structs.CLASS_TASK) (string, error) {
 startAgreemnt Call to SLALite API to start the agreement
 */
 func startAgreemnt(agreementID string) (string, error) {
-	log.Println("Rotterdam > CAAS > SLA [startAgreemnt] Starting SLA agrement [" + agreementID + "] ...")
+	log.Println(pathLOG + "[startAgreemnt] Starting SLA agrement [" + agreementID + "] ...")
 	// ==> curl -k -X PUT -d @agreement.json http://rotterdam-slalite60.192.168.7.28.xip.io/agreements/a03/start
 	data := url.Values{}
 	status, _, err := common.HTTPPUT(cfg.Config.Clusters[0].SLALiteEndPoint+"/agreements/"+agreementID+"/start", false, data)
 
 	if err != nil {
-		log.Println("Rotterdam > CAAS > SLA [startAgreemnt] ERROR", err)
+		log.Error(pathLOG+"[startAgreemnt] ERROR", err)
 		return "Error starting the SLA Agreement", err
 	}
-	log.Println("Rotterdam > CAAS > SLA [startAgreemnt] RESPONSE: OK")
+	log.Println(pathLOG + "[startAgreemnt] RESPONSE: OK")
 
 	return strconv.Itoa(status), nil
 }
@@ -178,19 +250,19 @@ func startAgreemnt(agreementID string) (string, error) {
 func stopSLA(agreementID string, tries int) (string, error) {
 	status, _, err := common.HTTPPUT(cfg.Config.Clusters[0].SLALiteEndPoint+"/agreements/"+agreementID+"/stop", false, url.Values{})
 	if err != nil {
-		log.Println("Rotterdam > CAAS > SLA [stopSLA] ERROR Trying to stop SLA ", err)
+		log.Error(pathLOG+"[stopSLA] ERROR Trying to stop SLA ", err)
 
 		if tries == 0 {
 			return "Error stopping the SLA Agreement", err
 		}
 
-		log.Println("Rotterdam > CAAS > SLA [stopSLA] Trying to stop the SLA again in 15 seconds ...")
+		log.Println(pathLOG + "[stopSLA] Trying to stop the SLA again in 15 seconds ...")
 
 		time.Sleep(15 * time.Second)
 		return stopSLA(agreementID, tries-1)
 	}
 
-	log.Println("Rotterdam > CAAS > SLA [stopSLA] RESPONSE: OK")
+	log.Println(pathLOG + "[stopSLA] RESPONSE: OK")
 	return strconv.Itoa(status), nil
 }
 
@@ -199,7 +271,7 @@ stopAgreemnt Call to SLALite API to stop the agreement
 */
 func stopAgreemnt(agreementID string) (string, error) {
 	agreementID = strings.Replace(agreementID, "-", "_", -1)
-	log.Println("Rotterdam > CAAS > SLA [stopAgreemnt] Stopping SLA agrement [" + agreementID + "] ...")
+	log.Println(pathLOG + "[stopAgreemnt] Stopping SLA agrement [" + agreementID + "] ...")
 	return stopSLA(agreementID, 3)
 }
 
@@ -208,17 +280,17 @@ terminateAgreemnt Call to SLALite API to terminate the agreement
 */
 func terminateAgreemnt(agreementID string) (string, error) {
 	agreementID = strings.Replace(agreementID, "-", "_", -1)
-	log.Println("Rotterdam > CAAS > SLA [terminateAgreemnt] Terminating SLA agrement [" + agreementID + "] ...")
+	log.Println(pathLOG + "[terminateAgreemnt] Terminating SLA agrement [" + agreementID + "] ...")
 
 	// ==> curl -k -X PUT -d @agreement.json http://rotterdam-slalite60.192.168.7.28.xip.io/agreements/a03/terminate
 	data := url.Values{}
 	status, _, err := common.HTTPPUT(cfg.Config.Clusters[0].SLALiteEndPoint+"/agreements/"+agreementID+"/terminate", false, data)
 
 	if err != nil {
-		log.Println("Rotterdam > CAAS > SLA [terminateAgreemnt] ERROR", err)
+		log.Error(pathLOG+"[terminateAgreemnt] ERROR", err)
 		return "Error terminating the SLA Agreement", err
 	}
-	log.Println("Rotterdam > CAAS > SLA [terminateAgreemnt] RESPONSE: OK")
+	log.Println(pathLOG + "[terminateAgreemnt] RESPONSE: OK")
 
 	return strconv.Itoa(status), nil
 }
@@ -229,26 +301,26 @@ func terminateAgreemnt(agreementID string) (string, error) {
 CreateStartCOMPSsSLA creates and starts an SLA
 */
 func CreateStartCOMPSsSLA(task structs.CLASS_TASK) error {
-	log.Println("Rotterdam > CAAS > SLA [CreateStartCOMPSsSLA] Creating COMPSs SLA agreement ...")
+	log.Println(pathLOG + "[CreateStartCOMPSsSLA] Creating COMPSs SLA agreement ...")
 	agreementID, err := createCOMPSsSLAAgreemnt(task, 1)
 	if err != nil {
-		log.Println("Rotterdam > CAAS > SLA [CreateStartCOMPSsSLA] ERROR creating COMPSs SLA Agreement")
+		log.Error(pathLOG + "[CreateStartCOMPSsSLA] ERROR creating COMPSs SLA Agreement")
 	} else {
-		log.Println("Rotterdam > CAAS > SLA [CreateStartCOMPSsSLA] Starting COMPSs SLA agreement " + agreementID + " ...")
+		log.Println(pathLOG + "[CreateStartCOMPSsSLA] Starting COMPSs SLA agreement " + agreementID + " ...")
 		_, err = startAgreemnt(agreementID)
 		if err != nil {
-			log.Println("Rotterdam > CAAS > SLA [CreateStartCOMPSsSLA] ERROR starting COMPSs SLA Agreement")
+			log.Error(pathLOG + "[CreateStartCOMPSsSLA] ERROR starting COMPSs SLA Agreement")
 		} else {
-			log.Println("Rotterdam > CAAS > SLA [CreateStartCOMPSsSLA] COMPSs SLA agreement " + agreementID + " started")
+			log.Println(pathLOG + "[CreateStartCOMPSsSLA] COMPSs SLA agreement " + agreementID + " started")
 
-			dbTask, err := common.ReadTaskValue(task.ID)
+			dbTask, err := db.ReadTaskValue(task.ID)
 			if err == nil {
 				dbTask.AgreementId = agreementID
-				err = common.SetTaskValue(task.ID, *dbTask)
+				err = db.SetTaskValue(task.ID, *dbTask)
 				if err == nil {
-					log.Println("Rotterdam > CAAS > SLA [CreateStartCOMPSsSLA] Task updated")
+					log.Println(pathLOG + "[CreateStartCOMPSsSLA] Task updated")
 				} else {
-					log.Println("Rotterdam > CAAS > SLA [CreateStartCOMPSsSLA] ERROR setting 'id agreement' in task")
+					log.Error(pathLOG+"[CreateStartCOMPSsSLA] ERROR setting 'id agreement' in task: ", err)
 				}
 			}
 		}
@@ -261,30 +333,30 @@ func CreateStartCOMPSsSLA(task structs.CLASS_TASK) error {
 CreateStartSLA creates and starts an SLA
 */
 func CreateStartSLA(task structs.CLASS_TASK) error {
-	log.Println("Rotterdam > CAAS > SLA [CreateStartSLA] Creating SLA agreement ...")
+	log.Println(pathLOG + "[CreateStartSLA] Creating SLA agreement ...")
 	agreementID, err := createSLAAgreemnt(task)
 	if err != nil {
-		log.Println("Rotterdam > CAAS > SLA [CreateStartSLA] ERROR creating SLA Agreement")
+		log.Error(pathLOG+"[CreateStartSLA] ERROR creating SLA Agreement: ", err)
 	} else {
 		if agreementID == constants.SLANotDefined {
-			log.Println("Rotterdam > CAAS > SLA [CreateStartSLA] Task is not using any SLA")
+			log.Println(pathLOG + "[CreateStartSLA] Task is not using any SLA")
 		} else {
-			log.Println("Rotterdam > CAAS > SLA [CreateStartSLA] Starting SLA agreement " + agreementID + " ...")
+			log.Println(pathLOG + "[CreateStartSLA] Starting SLA agreement " + agreementID + " ...")
 			_, err = startAgreemnt(agreementID)
 			if err != nil {
-				log.Println("Rotterdam > CAAS > SLA [CreateStartSLA] ERROR starting SLA Agreement")
+				log.Error(pathLOG+"[CreateStartSLA] ERROR starting SLA Agreement: ", err)
 			} else {
-				log.Println("Rotterdam > CAAS > SLA [CreateStartSLA] SLA agreement " + agreementID + " started")
+				log.Println(pathLOG + "[CreateStartSLA] SLA agreement " + agreementID + " started")
 			}
 		}
 
 		// update task
-		dbTask, err := common.ReadTaskValue(task.ID)
+		dbTask, err := db.ReadTaskValue(task.ID)
 		if err == nil {
 			dbTask.AgreementId = agreementID
-			err = common.SetTaskValue(task.ID, *dbTask)
+			err = db.SetTaskValue(task.ID, *dbTask)
 			if err != nil {
-				log.Println("Rotterdam > CAAS > SLA [CreateStartSLA] ERROR setting 'id agreement' in task ", err)
+				log.Error(pathLOG+"[CreateStartSLA] ERROR setting 'id agreement' in task ", err)
 			}
 		}
 	}
@@ -296,7 +368,7 @@ func CreateStartSLA(task structs.CLASS_TASK) error {
 StopTerminateSLA stops and terminates an SLA agreement after TASK is successfully deployed
 */
 func StopTerminateSLA(taskID string) {
-	log.Println("Rotterdam > CAAS > SLA [StopTerminateSLA] Stopping SLA agreement from task [" + taskID + "] ...")
+	log.Println(pathLOG + "[StopTerminateSLA] Stopping SLA agreement from task [" + taskID + "] ...")
 
 	agreementID := taskID
 
@@ -304,17 +376,17 @@ func StopTerminateSLA(taskID string) {
 	_, err := stopAgreemnt(agreementID)
 
 	if err != nil {
-		log.Println("Rotterdam > CAAS > SLA [StopTerminateSLA] ERROR Stopping SLA with id = " + agreementID)
+		log.Error(pathLOG + "[StopTerminateSLA] ERROR Stopping SLA with id = " + agreementID)
 	} else {
-		log.Println("Rotterdam > CAAS > SLA [StopTerminateSLA] Terminating SLA agreement " + agreementID + " ...")
+		log.Println(pathLOG + "[StopTerminateSLA] Terminating SLA agreement " + agreementID + " ...")
 		_, err := terminateAgreemnt(agreementID)
 		if err != nil {
-			log.Println("Rotterdam > CAAS > SLA [StopTerminateSLA] ERROR Terminating SLA Agreement")
+			log.Println(pathLOG + "[StopTerminateSLA] ERROR Terminating SLA Agreement")
 		} else {
-			log.Println("Rotterdam > CAAS > SLA [StopTerminateSLA] SLA agreement " + agreementID + " terminated")
-			_, err = common.DBDeleteTaskQos(taskID)
+			log.Println(pathLOG + "[StopTerminateSLA] SLA agreement " + agreementID + " terminated")
+			_, err = db.DBDeleteTaskQos(taskID)
 			if err != nil {
-				log.Println("Rotterdam > CAAS > SLA [StopTerminateSLA] ERROR deleting QoS:", err)
+				log.Error(pathLOG+"[StopTerminateSLA] ERROR deleting QoS:", err)
 			}
 		}
 	}
@@ -324,16 +396,16 @@ func StopTerminateSLA(taskID string) {
 AddPromMetric Call to SLALite API to add a new Prometheus metric
 */
 func AddPromMetric(metricID string) error {
-	log.Println("Rotterdam > CAAS > SLA [AddPromMetric] Adding new Prometheus metric [" + metricID + "] ...")
+	log.Println(pathLOG + "[AddPromMetric] Adding new Prometheus metric [" + metricID + "] ...")
 	// ==> curl -k -X POST -d @agreement.json http://rotterdam-slalite60.192.168.7.28.xip.io/metrics/metric_name
 	data := url.Values{}
 	_, _, err := common.HTTPPOST(cfg.Config.Clusters[0].SLALiteEndPoint+"/metrics/"+metricID, false, data)
 
 	if err != nil {
-		log.Println("Rotterdam > CAAS > SLA [AddPromMetric] ERROR", err)
+		log.Error(pathLOG+"[AddPromMetric] ERROR", err)
 		return err
 	}
-	log.Println("Rotterdam > CAAS > SLA [AddPromMetric] RESPONSE: OK")
+	log.Println(pathLOG + "[AddPromMetric] RESPONSE: OK")
 
 	return nil
 }

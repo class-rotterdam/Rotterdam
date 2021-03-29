@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,15 +14,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 14 April 2020
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package deployment
 
 import (
+	db "atos/rotterdam/database/imec"
 	constants "atos/rotterdam/globals/constants"
-	db "atos/rotterdam/imec/db"
 	"errors"
 	"log"
 	"strconv"
@@ -97,20 +98,22 @@ func deployKubelessUbuntu18(infr *db.DB_INFRASTRUCTURE_CLUSTER) error {
 
 // Kubeless deployment in UBUNTU 16
 func deployClusterKubelessUbuntu16(infr *db.DB_INFRASTRUCTURE_CLUSTER) error {
-	err := deployClusterUbuntu16(infr)
+	/*err := deployClusterUbuntu16(infr)
 	if err == nil {
 		return deployKubelessUbuntu18(infr)
 	}
-	return err
+	return err*/
+	return deployKubelessUbuntu18(infr)
 }
 
 // Kubeless deployment in UBUNTU 18
 func deployClusterKubelessUbuntu18(infr *db.DB_INFRASTRUCTURE_CLUSTER) error {
-	err := deployClusterUbuntu18(infr)
+	/*err := deployClusterUbuntu18(infr)
 	if err == nil {
 		return deployKubelessUbuntu18(infr)
 	}
-	return err
+	return err*/
+	return deployKubelessUbuntu18(infr)
 }
 
 /*

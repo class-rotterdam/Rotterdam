@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,8 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 06 March 2020
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package impl
@@ -22,9 +23,10 @@ import (
 	urls "atos/rotterdam/caas/adapters"
 	adapt_common "atos/rotterdam/caas/adapters/common"
 	common "atos/rotterdam/caas/common"
-	structs "atos/rotterdam/caas/common/structs"
-	imec_db "atos/rotterdam/imec/db"
-	"log"
+	log "atos/rotterdam/common/logs"
+	db "atos/rotterdam/database/caas"
+	imec_db "atos/rotterdam/database/imec"
+	structs "atos/rotterdam/globals/structs"
 	"strconv"
 	"time"
 )
@@ -36,7 +38,7 @@ Get Pods from current task. Retrieved Pods = Expected Pods
 // curl -X GET -H "Authorization: Bearer Mo6CxHG2ZjZCqh-moIK8fjSorm6aennoAX8Q3xTEFXQ"
 // http://192.168.7.28:8001/api/v1/namespaces/class/pods?labelSelector=app=nginx-app
 func checkPodsFromTask(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace string, id string, expectedReplicas int) (string, map[string]interface{}, error) {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkPodsFromTask] Getting pods ...")
+	log.Println(pathLOG + "COMPSs [checkPodsFromTask] Getting pods ...")
 
 	// get pods from task
 	_, result, err := common.HTTPGETStruct(
@@ -44,14 +46,14 @@ func checkPodsFromTask(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace str
 		//cfg.Config.Clusters[clusterIndex].KubernetesEndPoint+"/api/v1/namespaces/"+namespace+"/pods?labelSelector=app="+id,
 		true)
 	if err != nil {
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkPodsFromTask] ERROR", err)
+		log.Error(pathLOG+"COMPSs [checkPodsFromTask] ERROR", err)
 		return "error", nil, err
 	}
 
 	// items
 	items := result["items"].([]interface{})
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkPodsFromTask] Retrieved pods = " + strconv.Itoa(len(items)))
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkPodsFromTask] Expected pods = " + strconv.Itoa(expectedReplicas))
+	log.Println(pathLOG + "COMPSs [checkPodsFromTask] Retrieved pods = " + strconv.Itoa(len(items)))
+	log.Println(pathLOG + "COMPSs [checkPodsFromTask] Expected pods = " + strconv.Itoa(expectedReplicas))
 
 	if len(items) == expectedReplicas {
 		return "ready", result, err
@@ -66,7 +68,7 @@ Get Pods from current task. Retrieved Pods = Expected Pods
 // curl -X GET -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9"
 // http://192.168.7.28:8001/api/v1/namespaces/class/services/serv-g7bv9fu6d0rtaius7okjnk1580403141125383512-5c465cbb4b-xqdl8
 func getServiceFromPod(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace string, idPod string) (string, adapt_common.SERV_POD, error) {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getServiceFromPod] Getting service from Pod [" + idPod + "] ...")
+	log.Println(pathLOG + "COMPSs [getServiceFromPod] Getting service from Pod [" + idPod + "] ...")
 
 	// get pods from task
 	_, result, err := common.HTTPGETString(
@@ -74,14 +76,14 @@ func getServiceFromPod(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace str
 		//cfg.Config.Clusters[clusterIndex].KubernetesEndPoint+"/api/v1/namespaces/"+namespace+"/services/serv-"+idPod,
 		true)
 	if err != nil {
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getServiceFromPod] ERROR", err)
+		log.Error(pathLOG+"COMPSs [getServiceFromPod] ERROR", err)
 		return "error", adapt_common.SERV_POD{}, err
 	}
 
 	// metadata
 	sp, err := adapt_common.StringToServPodStruct(result)
 	if err != nil {
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getServiceFromPod] ERROR", err)
+		log.Error(pathLOG+"COMPSs [getServiceFromPod] ERROR", err)
 		return "error", adapt_common.SERV_POD{}, err
 	}
 
@@ -89,7 +91,7 @@ func getServiceFromPod(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace str
 		return "not-ready", adapt_common.SERV_POD{}, err
 	}
 
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getServiceFromPod] Retrieved metadata.name = " + sp.Metadata.Name)
+	log.Println(pathLOG + "COMPSs [getServiceFromPod] Retrieved metadata.name = " + sp.Metadata.Name)
 
 	return "ready", *sp, nil
 }
@@ -98,11 +100,11 @@ func getServiceFromPod(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace str
 // curl -X GET -H "Authorization: Bearer Mo6CxHG2ZjZCqh-moIK8fjSorm6aennoAX8Q3xTEFXQ"
 // http://192.168.7.28:8001/api/v1/namespaces/class/pods?labelSelector=app=nginx-app
 func getPodsInfoFromTask(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, result map[string]interface{}, appPort int, appProtocol string) []structs.DB_TASK_POD {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getPodsInfoFromTask] Getting info from pods ...")
+	log.Println(pathLOG + "COMPSs [getPodsInfoFromTask] Getting info from pods ...")
 
 	// items
 	items := result["items"].([]interface{})
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getPodsInfoFromTask] Total pods = " + strconv.Itoa(len(items)))
+	log.Println(pathLOG + "COMPSs [getPodsInfoFromTask] Total pods = " + strconv.Itoa(len(items)))
 
 	// final res
 	var lres []structs.DB_TASK_POD
@@ -147,62 +149,62 @@ func getPodsInfoFromTask(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, result map[
 			}
 		}
 
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getPodsInfoFromTask] POD " + podData.Name)
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getPodsInfoFromTask]    - PodIP: " + podData.PodIP)
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getPodsInfoFromTask]    - HostIP: " + podData.HostIP)
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getPodsInfoFromTask]    - Status: " + podData.Status)
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getPodsInfoFromTask]    - Port: " + strconv.Itoa(podData.Port))
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getPodsInfoFromTask]    - TargetPort: " + strconv.Itoa(podData.TargetPort))
+		log.Debug(pathLOG + "COMPSs [getPodsInfoFromTask] POD " + podData.Name)
+		log.Debug(pathLOG + "COMPSs [getPodsInfoFromTask]    - PodIP: " + podData.PodIP)
+		log.Debug(pathLOG + "COMPSs [getPodsInfoFromTask]    - HostIP: " + podData.HostIP)
+		log.Debug(pathLOG + "COMPSs [getPodsInfoFromTask]    - Status: " + podData.Status)
+		log.Debug(pathLOG + "COMPSs [getPodsInfoFromTask]    - Port: " + strconv.Itoa(podData.Port))
+		log.Debug(pathLOG + "COMPSs [getPodsInfoFromTask]    - TargetPort: " + strconv.Itoa(podData.TargetPort))
 
 		lres = append(lres, *podData)
 	}
 
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [getPodsInfoFromTask] Total pods response = " + strconv.Itoa(len(lres)))
+	log.Println(pathLOG + "COMPSs [getPodsInfoFromTask] Total pods response = " + strconv.Itoa(len(lres)))
 
 	return lres
 }
 
 // patchPods: k8s: patch pods names
 func patchPods(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace string, podName string) (string, error) {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [patchPods] Generating 'pod patch' json ...")
-	lK8sPatchPod := common.StructNewPodPatch(podName) // returns []structs.K8S_POD_PATCH_LINE
+	log.Println(pathLOG + "COMPSs [patchPods] Generating 'pod patch' json ...")
+	lK8sPatchPod := structs.StructNewPodPatch(podName) // returns []structs.K8S_POD_PATCH_LINE
 
-	strTxt, _ := common.CommPatchPodsListToString(lK8sPatchPod)
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [patchPods] [" + strTxt + "]")
+	strTxt, _ := structs.CommPatchPodsListToString(lK8sPatchPod)
+	log.Println(pathLOG + "COMPSs [patchPods] [" + strTxt + "]")
 
 	// CALL to Kubernetes API to launch a new deployment
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [patchPods] Patching pod " + podName + " ...")
+	log.Println(pathLOG + "COMPSs [patchPods] Patching pod " + podName + " ...")
 	status, _, err := common.HTTPPATCHStruct(
 		urls.GetPathKubernetesPod(cluster, namespace, podName),
 		//cfg.Config.Clusters[clusterIndex].KubernetesEndPoint+"/api/v1/namespaces/"+namespace+"/pods/"+podName,
 		true,
 		lK8sPatchPod)
 	if err != nil {
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [patchPods] ERROR", err)
+		log.Error(pathLOG+"COMPSs [patchPods] ERROR", err)
 		return "error", err
 	}
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [patchPods] RESPONSE: OK")
+	log.Println(pathLOG + "COMPSs [patchPods] RESPONSE: OK")
 
 	return strconv.Itoa(status), nil
 }
 
 // podService: k8s: service
 func podService(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace string, pod structs.DB_TASK_POD) (string, error) {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [podService] Generating 'service' json ...")
-	k8sServ := common.StructNewPodServiceTemplate(urls.GetHostIP(cluster), pod) // returns *K8S_SERVICE
+	log.Println(pathLOG + "COMPSs [podService] Generating 'service' json ...")
+	k8sServ := structs.StructNewPodServiceTemplate(urls.GetHostIP(cluster), pod) // returns *K8S_SERVICE
 
-	strTxt, _ := common.CommServiceStructToString(*k8sServ)
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [podService] [" + strTxt + "]")
+	strTxt, _ := structs.CommServiceStructToString(*k8sServ)
+	log.Println(pathLOG + "COMPSs [podService] [" + strTxt + "]")
 
 	// CALL to Kubernetes API to launch a new service
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [podService] Creating a new service in K8s cluster ...")
+	log.Println(pathLOG + "COMPSs [podService] Creating a new service in K8s cluster ...")
 	status, _, err := common.HTTPPOST(
 		urls.GetPathKubernetesCreateService(cluster, namespace),
 		//cfg.Config.Clusters[clusterIndex].KubernetesEndPoint+"/api/v1/namespaces/"+namespace+"/services",
 		true,
 		k8sServ)
 	if err != nil {
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [podService] ERROR", err)
+		log.Error(pathLOG+"COMPSs [podService] ERROR", err)
 		return "", err
 	}
 	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [podService] RESPONSE: OK")
@@ -214,53 +216,53 @@ func podService(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace string, po
 Deployment of a COMPSs task
 */
 func compssDeploymentBackgroundTasks(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, task structs.CLASS_TASK) {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssDeploymentBackgroundTasks] Executing background tasks ...")
+	log.Println(pathLOG + "COMPSs [compssDeploymentBackgroundTasks] Executing background tasks ...")
 
 	time.Sleep(10 * time.Second)
 	mainPort, mainProtocol := adapt_common.GetMainPort(task)
 
 	for i := 0; i < 10; i++ {
 		// check if pods are running
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssDeploymentBackgroundTasks] Checking status of task pods ...")
+		log.Println(pathLOG + "COMPSs [compssDeploymentBackgroundTasks] Checking status of task pods ...")
 		str, result, err := checkPodsFromTask(cluster, task.Dock, task.ID, task.Replicas)
 
 		if err == nil && str == "ready" { // Expected Pods = Retrieved Pods
 			// get info from pods
-			log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssDeploymentBackgroundTasks] Getting all pods info (ids, names, IPs, ports) ...")
+			log.Println(pathLOG + "COMPSs [compssDeploymentBackgroundTasks] Getting all pods info (ids, names, IPs, ports) ...")
 			lTaskPods := getPodsInfoFromTask(cluster, result, mainPort, mainProtocol)
 
-			dbTask, err := common.ReadTaskValue(task.ID)
+			dbTask, err := db.ReadTaskValue(task.ID)
 			if err == nil {
 				// update task with pods info
 				dbTask.Pods = lTaskPods
-				log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssDeploymentBackgroundTasks]Saving info to db ...")
-				err = common.SetTaskValue(task.ID, *dbTask)
+				log.Println(pathLOG + "COMPSs [compssDeploymentBackgroundTasks]Saving info to db ...")
+				err = db.SetTaskValue(task.ID, *dbTask)
 
 				if err == nil {
 					// update pods: pod-name (labels)
-					log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssDeploymentBackgroundTasks] Updating pods (/metadata/labels/pod-name) / Creating and exposing pods services ...")
+					log.Println(pathLOG + "COMPSs [compssDeploymentBackgroundTasks] Updating pods (/metadata/labels/pod-name) / Creating and exposing pods services ...")
 					for _, pod := range lTaskPods {
-						log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssDeploymentBackgroundTasks] Updating pod " + pod.Name)
+						log.Println(pathLOG + "COMPSs [compssDeploymentBackgroundTasks] Updating pod " + pod.Name)
 						status, err := patchPods(cluster, task.Dock, pod.Name)
 						// TODO check errors
-						log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssDeploymentBackgroundTasks] status: " + status)
+						log.Println(pathLOG + "COMPSs [compssDeploymentBackgroundTasks] status: " + status)
 
 						if err == nil {
-							log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssDeploymentBackgroundTasks] Creating and exposing pod's service ...")
+							log.Println(pathLOG + "COMPSs [compssDeploymentBackgroundTasks] Creating and exposing pod's service ...")
 
 							_, _ = podService(cluster, task.Dock, pod)
 						}
 					}
 
-					log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssDeploymentBackgroundTasks] Finishing background process ...")
+					log.Println(pathLOG + "COMPSs [compssDeploymentBackgroundTasks] Finishing background process ...")
 
 					break
 				}
 			}
 		} else if err == nil {
-			log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssDeploymentBackgroundTasks] str = " + str)
+			log.Println(pathLOG + "COMPSs [compssDeploymentBackgroundTasks] str = " + str)
 		} else {
-			log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssDeploymentBackgroundTasks] ERROR (1) ", err)
+			log.Error(pathLOG+"COMPSs [compssDeploymentBackgroundTasks] ERROR (1) ", err)
 		}
 
 		time.Sleep(30 * time.Second)
@@ -269,11 +271,11 @@ func compssDeploymentBackgroundTasks(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER,
 
 // checkCurrentPodsInfoFromTask
 func checkCurrentPodsInfoFromTask(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, result map[string]interface{}, appPort int, appProtocol string, dbTask structs.DB_TASK) []structs.DB_TASK_POD {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkCurrentPodsInfoFromTask] Getting info from pods ...")
+	log.Println(pathLOG + "COMPSs [checkCurrentPodsInfoFromTask] Getting info from pods ...")
 
 	// items
 	items := result["items"].([]interface{})
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkCurrentPodsInfoFromTask] Total pods = " + strconv.Itoa(len(items)))
+	log.Println(pathLOG + "COMPSs [checkCurrentPodsInfoFromTask] Total pods = " + strconv.Itoa(len(items)))
 
 	// final res
 	var lres []structs.DB_TASK_POD
@@ -320,31 +322,31 @@ func checkCurrentPodsInfoFromTask(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, re
 		// GET SERVICE, if exists
 		ready, srvPod, err := getServiceFromPod(cluster, dbTask.TaskDefinition.Dock, podData.Name)
 		if err == nil && ready == "ready" {
-			log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkCurrentPodsInfoFromTask] POD " + podData.Name + " already exists")
+			log.Println(pathLOG + "COMPSs [checkCurrentPodsInfoFromTask] POD " + podData.Name + " already exists")
 			podData.Port = srvPod.Spec.Ports[0].Port
 		} else {
-			log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkCurrentPodsInfoFromTask] Generating new port for POD " + podData.Name)
+			log.Println(pathLOG + "COMPSs [checkCurrentPodsInfoFromTask] Generating new port for POD " + podData.Name)
 			podData.Port = adapt_common.NewRPort()
 		}
 
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkCurrentPodsInfoFromTask] POD " + podData.Name)
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkCurrentPodsInfoFromTask]    - PodIP: " + podData.PodIP)
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkCurrentPodsInfoFromTask]    - HostIP: " + podData.HostIP)
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkCurrentPodsInfoFromTask]    - Status: " + podData.Status)
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkCurrentPodsInfoFromTask]    - Port: " + strconv.Itoa(podData.Port))
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkCurrentPodsInfoFromTask]    - TargetPort: " + strconv.Itoa(podData.TargetPort))
+		log.Println(pathLOG + "COMPSs [checkCurrentPodsInfoFromTask] POD " + podData.Name)
+		log.Println(pathLOG + "COMPSs [checkCurrentPodsInfoFromTask]    - PodIP: " + podData.PodIP)
+		log.Println(pathLOG + "COMPSs [checkCurrentPodsInfoFromTask]    - HostIP: " + podData.HostIP)
+		log.Println(pathLOG + "COMPSs [checkCurrentPodsInfoFromTask]    - Status: " + podData.Status)
+		log.Println(pathLOG + "COMPSs [checkCurrentPodsInfoFromTask]    - Port: " + strconv.Itoa(podData.Port))
+		log.Println(pathLOG + "COMPSs [checkCurrentPodsInfoFromTask]    - TargetPort: " + strconv.Itoa(podData.TargetPort))
 
 		lres = append(lres, *podData)
 	}
 
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [checkCurrentPodsInfoFromTask] Total pods response = " + strconv.Itoa(len(lres)))
+	log.Println(pathLOG + "COMPSs [checkCurrentPodsInfoFromTask] Total pods response = " + strconv.Itoa(len(lres)))
 
 	return lres
 }
 
 // compssScalingOutBackgroundTasks Expose new services and save task
 func compssScalingOutBackgroundTasks(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, dbTask structs.DB_TASK, items map[string]interface{}) []structs.DB_TASK_POD {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssScalingOutBackgroundTasks] Exposing new services ...")
+	log.Println(pathLOG + "COMPSs [compssScalingOutBackgroundTasks] Exposing new services ...")
 
 	// get main port and protocol
 	mainPort, mainProtocol := adapt_common.GetMainPort(dbTask.TaskDefinition)
@@ -353,7 +355,7 @@ func compssScalingOutBackgroundTasks(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER,
 	lTaskPods := checkCurrentPodsInfoFromTask(cluster, items, mainPort, mainProtocol, dbTask)
 
 	// add new services
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssScalingOutBackgroundTasks] Updating new pods (/metadata/labels/pod-name) / Creating and exposing new pods services ...")
+	log.Println(pathLOG + "COMPSs [compssScalingOutBackgroundTasks] Updating new pods (/metadata/labels/pod-name) / Creating and exposing new pods services ...")
 	for _, pod := range lTaskPods { // iterate all pods (including new pods)
 		notfound := true
 		for _, podold := range dbTask.Pods { // check if pod is new or old
@@ -364,25 +366,25 @@ func compssScalingOutBackgroundTasks(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER,
 		}
 
 		if notfound == true {
-			log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssScalingOutBackgroundTasks] Updating pod " + pod.Name)
+			log.Println(pathLOG + "COMPSs [compssScalingOutBackgroundTasks] Updating pod " + pod.Name)
 			status, err := patchPods(cluster, dbTask.TaskDefinition.Dock, pod.Name)
 			// TODO check errors
-			log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssScalingOutBackgroundTasks] status: " + status)
+			log.Println(pathLOG + "COMPSs [compssScalingOutBackgroundTasks] status: " + status)
 
 			if err == nil {
-				log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssScalingOutBackgroundTasks] Creating and exposing pod's service ...")
+				log.Println(pathLOG + "COMPSs [compssScalingOutBackgroundTasks] Creating and exposing pod's service ...")
 				_, _ = podService(cluster, dbTask.TaskDefinition.Dock, pod)
 			}
 		}
 	}
 
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssScalingOutBackgroundTasks] Update finished")
+	log.Println(pathLOG + "COMPSs [compssScalingOutBackgroundTasks] Update finished")
 	return lTaskPods
 }
 
 // compssScalingInBackgroundTasks Removes unused services and save task
 func compssScalingInBackgroundTasks(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, dbTask structs.DB_TASK, items map[string]interface{}) []structs.DB_TASK_POD {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssScalingInBackgroundTasks] Removing unused services ...")
+	log.Println(pathLOG + "COMPSs [compssScalingInBackgroundTasks] Removing unused services ...")
 
 	// get main port and protocol
 	mainPort, mainProtocol := adapt_common.GetMainPort(dbTask.TaskDefinition)
@@ -391,7 +393,7 @@ func compssScalingInBackgroundTasks(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, 
 	lTaskPods := checkCurrentPodsInfoFromTask(cluster, items, mainPort, mainProtocol, dbTask)
 
 	// remove 'old' services
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssScalingOutBackgroundTasks] Removing unused services ...")
+	log.Println(pathLOG + "COMPSs [compssScalingOutBackgroundTasks] Removing unused services ...")
 	for _, podold := range dbTask.Pods {
 		notfound := true
 		for _, pod := range lTaskPods {
@@ -403,12 +405,12 @@ func compssScalingInBackgroundTasks(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, 
 
 		// remove service if old pod was not found in the list of current pods
 		if notfound == true {
-			log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssScalingOutBackgroundTasks] Removing unused service of old pod [" + podold.Name + "] ...")
+			log.Println(pathLOG + "COMPSs [compssScalingOutBackgroundTasks] Removing unused service of old pod [" + podold.Name + "] ...")
 			_, _ = adapt_common.DelK8sService(dbTask.TaskDefinition.Dock, podold.Name, cluster, false)
 		}
 	}
 
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [compssScalingOutBackgroundTasks] Services update finished")
+	log.Println(pathLOG + "COMPSs [compssScalingOutBackgroundTasks] Services update finished")
 	return lTaskPods
 }
 
@@ -417,13 +419,13 @@ CompssScalingUpdateServices Updates (remove unused / add new) services used to e
 Replicas are scaled in / out before calling this method
 */
 func CompssScalingUpdateServices(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, dbTask structs.DB_TASK, newReplicasValue int) structs.DB_TASK {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [CompssScalingUpdateServices] Executing background tasks ...")
+	log.Println(pathLOG + "COMPSs [CompssScalingUpdateServices] Executing background tasks ...")
 
 	time.Sleep(20 * time.Second)
 
 	for i := 0; i < 10; i++ {
 		// check if pods are running
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [CompssScalingUpdateServices] Checking status of task pods [new_replicas_value=" + strconv.Itoa(newReplicasValue) + "] ...")
+		log.Println(pathLOG + "COMPSs [CompssScalingUpdateServices] Checking status of task pods [new_replicas_value=" + strconv.Itoa(newReplicasValue) + "] ...")
 		str, items, err := checkPodsFromTask(cluster, dbTask.TaskDefinition.Dock, dbTask.TaskDefinition.ID, newReplicasValue)
 		if err == nil && str == "ready" {
 			if dbTask.Replicas < newReplicasValue {
@@ -434,13 +436,13 @@ func CompssScalingUpdateServices(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, dbT
 				break
 			} else {
 				// don't update the task
-				log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [CompssScalingUpdateServices] WARNING type of task is not defined: " + dbTask.Type)
+				log.Println(pathLOG + "COMPSs [CompssScalingUpdateServices] WARNING type of task is not defined: " + dbTask.Type)
 				return dbTask
 			}
 		}
 
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [CompssScalingUpdateServices] Result: " + str)
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > COMPSs [CompssScalingUpdateServices] Trying again in 20s ...")
+		log.Println(pathLOG + "COMPSs [CompssScalingUpdateServices] Result: " + str)
+		log.Println(pathLOG + "COMPSs [CompssScalingUpdateServices] Trying again in 20s ...")
 		time.Sleep(20 * time.Second)
 	}
 

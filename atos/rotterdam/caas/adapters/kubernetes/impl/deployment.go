@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,27 +14,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 11 June 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package impl
 
 import (
 	adapt_common "atos/rotterdam/caas/adapters/common"
-	common "atos/rotterdam/caas/common"
-	structs "atos/rotterdam/caas/common/structs"
-	imec_db "atos/rotterdam/imec/db"
+	log "atos/rotterdam/common/logs"
+	db "atos/rotterdam/database/caas"
+	imec_db "atos/rotterdam/database/imec"
+	structs "atos/rotterdam/globals/structs"
 	"errors"
-	"log"
 	"strings"
 )
+
+// path used in logs
+const pathLOG string = "Rotterdam > CAAS > Adapters > Kubernetes > Implementation : "
 
 /*
 DeployTask Deploy a task (k8s: deployment & service & volumes ...)
 */
 func DeployTask(task structs.CLASS_TASK) (string, error) {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTask] Deploying new task ...")
+	log.Println(pathLOG + "Deployment [DeployTask] Deploying new task ...")
 
 	clusterInfr, _ := imec_db.GetCluster(task.Cluster)
 	clusterID := ""
@@ -42,21 +46,21 @@ func DeployTask(task structs.CLASS_TASK) (string, error) {
 		clusterHost = clusterInfr.HostIP
 	}
 	namespace := task.Dock
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTask] cluster id = " + clusterID + ", dock = " + namespace + ", host = " + clusterHost + "")
+	log.Println(pathLOG + "Deployment [DeployTask] cluster id = " + clusterID + ", dock = " + namespace + ", host = " + clusterHost + "")
 
 	// 1. DEPLOYMENT /////
 	status, err := adapt_common.K8sDeployment(namespace, task, clusterInfr, false)
 	if err != nil {
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTask] ERROR (1)", err)
+		log.Error(pathLOG+"Deployment [DeployTask] ERROR (1)", err)
 		return "", err
 	} else if status == "200" || status == "201" {
 		// 2. SERVICE /////
 		status, _, _, err := adapt_common.K8sService(namespace, task, clusterInfr, false)
 		if err != nil {
-			log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTask] ERROR (2)", err)
+			log.Error(pathLOG+"Deployment [DeployTask] ERROR (2)", err)
 			return "", err
 		} else if status == "200" || status == "201" {
-			log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTask] Task deployed with success")
+			log.Println(pathLOG + "Deployment [DeployTask] Task deployed with success")
 			// save to DB
 			dbtask := &structs.DB_TASK{
 				DbId:           structs.DB_TABLE_TASK,
@@ -71,9 +75,9 @@ func DeployTask(task structs.CLASS_TASK) (string, error) {
 				Replicas:       task.Replicas,
 				TaskDefinition: task}
 
-			err = common.SetTaskValue(task.ID, *dbtask)
+			err = db.SetTaskValue(task.ID, *dbtask)
 			if err != nil {
-				log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTask] ERROR (3)", err)
+				log.Error(pathLOG+"Deployment [DeployTask] ERROR (3)", err)
 			}
 
 			return "ok", nil
@@ -81,7 +85,7 @@ func DeployTask(task structs.CLASS_TASK) (string, error) {
 	}
 
 	err = errors.New("Task creation failed. status = [" + status + "]")
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTask] ERROR (4)", err)
+	log.Error(pathLOG+"Deployment [DeployTask] ERROR (4)", err)
 	return "", err
 }
 
@@ -89,7 +93,7 @@ func DeployTask(task structs.CLASS_TASK) (string, error) {
 DeployTaskCompss Deploy a COMPSs task (k8s: deployment & service & volumes ...)
 */
 func DeployTaskCompss(task structs.CLASS_TASK) (string, error) {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTaskCompss] Deploying new task ...")
+	log.Println(pathLOG + "Deployment [DeployTaskCompss] Deploying new task ...")
 
 	clusterInfr, _ := imec_db.GetCluster(task.Cluster)
 	clusterID := ""
@@ -97,15 +101,15 @@ func DeployTaskCompss(task structs.CLASS_TASK) (string, error) {
 		clusterID = clusterInfr.ID
 	}
 	namespace := task.Dock
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTaskCompss] cluster id = " + clusterID + ", dock = " + namespace)
+	log.Println(pathLOG + "Deployment [DeployTaskCompss] cluster id = " + clusterID + ", dock = " + namespace)
 
 	// 1. DEPLOYMENT /////
 	status, err := adapt_common.K8sDeployment(namespace, task, clusterInfr, false)
 	if err != nil {
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTaskCompss] ERROR (1)", err)
+		log.Error(pathLOG+"Deployment [DeployTaskCompss] ERROR (1)", err)
 		return "", err
 	} else if status == "200" || status == "201" {
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTaskCompss] Task deployed with success")
+		log.Println(pathLOG + "Deployment [DeployTaskCompss] Task deployed with success")
 		// save to DB
 		dbtask := &structs.DB_TASK{
 			DbId:           structs.DB_TABLE_TASK,
@@ -118,18 +122,18 @@ func DeployTaskCompss(task structs.CLASS_TASK) (string, error) {
 			Status:         "Deployed",
 			Replicas:       task.Replicas,
 			TaskDefinition: task}
-		common.SetTaskValue(task.ID, *dbtask)
+		db.SetTaskValue(task.ID, *dbtask)
 
 		go func() {
-			log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTaskCompss] Starting background tasks...")
+			log.Println(pathLOG + "Deployment [DeployTaskCompss] Starting background tasks...")
 			adapt_common.CompssDeploymentBackgroundTasks(task, clusterInfr)
-			log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTaskCompss] Background tasks completed")
+			log.Println(pathLOG + "Deployment [DeployTaskCompss] Background tasks completed")
 		}()
 
 		return "ok", nil
 	}
 
 	err = errors.New("Task creation failed. status = [" + status + "]")
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Deployment [DeployTaskCompss] ERROR (4)", err)
+	log.Error(pathLOG+"Deployment [DeployTaskCompss] ERROR (4)", err)
 	return "", err
 }

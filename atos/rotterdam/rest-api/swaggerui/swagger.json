@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "version": "1.8.0",
+    "version": "1.9.3",
     "title": "Rotterdam CaaS",
     "description": "Rotterdam CaaS REST API is responsible for the deployment of tasks and docks in a Kubernetes cluster"
   },
@@ -53,6 +53,38 @@
         "responses": {
           "200": {
             "description": "Current Rotterdam Configuration"
+          }
+        },
+        "security": [{
+          "rotterdam_auth": ["write:rotterdam", "read:rotterdam"]
+        }]
+      },
+      "put": {
+        "tags": ["status"],
+        "description": "Updates the Rotterdam Configuration",
+        "summary": "Updates the Rotterdam Configuration",
+        "operationId": "updateConfig",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "configuration",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ConfigurationSetUp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "schema": {
+              "$ref": "#/definitions/Configuration"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
           }
         },
         "security": [{
@@ -516,7 +548,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Task get",
+            "description": "Get function",
             "schema": {
               "$ref": "#/definitions/Task"
             }
@@ -574,11 +606,18 @@
         "produces": ["application/json"],
         "parameters": [
           {
+            "name": "id",
+            "description": "id of the function",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
             "in": "body",
             "name": "function",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Task"
+              "$ref": "#/definitions/Function"
             }
           }
         ],
@@ -586,7 +625,7 @@
           "200": {
             "description": "Function Called",
             "schema": {
-              "$ref": "#/definitions/Task"
+              "$ref": "#/definitions/Function"
             }
           },
           "400": {
@@ -1039,6 +1078,190 @@
 		}
 	},
   "definitions": {
+    "ConfigurationSetUp": {
+      "description": "A representation of a Rotterdam ConfigurationSetUp",
+      "type": "object",
+      "properties": {
+        "Clusters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ID": {
+                "type": "string",
+                "example": "123827368713"
+              },
+              "Name": {
+                "type": "string",
+                "example": "cluster"
+              },
+              "Description": {
+                "type": "string",
+                "example": "cluster description"
+              },
+              "Type": {
+                "type": "string",
+                "example": "type"
+              },
+              "SO": {
+                "type": "string",
+                "example": "Ubuntu 16"
+              },
+              "DefaultDock": {
+                "type": "string",
+                "example": "class"
+              },
+              "OpenshiftOauthToken": {
+                "type": "string",
+                "example": "21jhgsds12321..."
+              },
+              "KubernetesEndPoint": {
+                "type": "string",
+                "example": "http://localhost:9001"
+              },
+              "OpenshiftEndPoint": {
+                "type": "string",
+                "example": "http://localhost:9002"
+              },
+              "SLALiteEndPoint": {
+                "type": "string",
+                "example": "http://localhost:9003"
+              },
+              "PrometheusPushgatewayEndPoint": {
+                "type": "string",
+                "example": "http://localhost:9004"
+              },
+              "HostIP": {
+                "type": "string",
+                "example": "127.0.0.1"
+              },
+              "HostPort": {
+                "type": "int",
+                "example": 22
+              },
+              "User": {
+                "type": "string",
+                "example": "username"
+              },
+              "Password": {
+                "type": "string",
+                "example": "password"
+              },
+              "KeyFile": {
+                "type": "string",
+                "example": "KeyFile"
+              }
+            }
+          }
+        }
+      }
+    },
+    "Configuration": {
+      "description": "A representation of a Rotterdam Configuration",
+      "type": "object",
+      "properties": {
+        "RestApiVersion": {
+          "type": "string",
+          "example": "1.0"
+        },
+        "CaaSVersion": {
+          "type": "string",
+          "example": "1.0"
+        },
+        "FaaSVersion": {
+          "type": "string",
+          "example": "1.0"
+        },
+        "RulesEngineVersion": {
+          "type": "string",
+          "example": "1.0"
+        },
+        "IMECVersion": {
+          "type": "string",
+          "example": "1.0"
+        },
+        "SLALiteVersion": {
+          "type": "string",
+          "example": "1.0"
+        },
+        "ServerPort": {
+          "type": "string",
+          "example": "80"
+        },
+        "Clusters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ID": {
+                "type": "string",
+                "example": "123827368713"
+              },
+              "Name": {
+                "type": "string",
+                "example": "cluster"
+              },
+              "Description": {
+                "type": "string",
+                "example": "cluster description"
+              },
+              "Type": {
+                "type": "string",
+                "example": "type"
+              },
+              "SO": {
+                "type": "string",
+                "example": "Ubuntu 16"
+              },
+              "DefaultDock": {
+                "type": "string",
+                "example": "class"
+              },
+              "OpenshiftOauthToken": {
+                "type": "string",
+                "example": "21jhgsds12321..."
+              },
+              "KubernetesEndPoint": {
+                "type": "string",
+                "example": "http://localhost:9001"
+              },
+              "OpenshiftEndPoint": {
+                "type": "string",
+                "example": "http://localhost:9002"
+              },
+              "SLALiteEndPoint": {
+                "type": "string",
+                "example": "http://localhost:9003"
+              },
+              "PrometheusPushgatewayEndPoint": {
+                "type": "string",
+                "example": "http://localhost:9004"
+              },
+              "HostIP": {
+                "type": "string",
+                "example": "127.0.0.1"
+              },
+              "HostPort": {
+                "type": "int",
+                "example": 22
+              },
+              "User": {
+                "type": "string",
+                "example": "username"
+              },
+              "Password": {
+                "type": "string",
+                "example": "password"
+              },
+              "KeyFile": {
+                "type": "string",
+                "example": "KeyFile"
+              }
+            }
+          }
+        }
+      }
+    },
     "Infrastructure": {
       "description": "A representation of a Rotterdam Infrastructure",
       "type": "object",
@@ -1375,7 +1598,11 @@
         },
         "cluster": {
           "type": "string",
-          "example": "microk8s_cluster"
+          "example": "maincluster"
+        },
+        "type": {
+          "type": "string",
+          "example": "function"
         },
         "runtime": {
           "type": "string",

@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,22 +14,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 May 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package main
 
 import (
+	clustersMonitoring "atos/rotterdam/adaptation-engine/monitoring"
 	urls "atos/rotterdam/caas/adapters"
+	log "atos/rotterdam/common/logs"
 	cfg "atos/rotterdam/config"
-	imec_db "atos/rotterdam/imec/db"
+	imec_db "atos/rotterdam/database/imec"
 	rest_api "atos/rotterdam/rest-api"
 	"encoding/json"
-	"log"
 	"os"
 	"strconv"
 )
+
+// path used in logs
+const pathLOG string = "Rotterdam : "
 
 // fileExists checks if a file exists and is not a directory before we try using it to prevent further errors.
 func fileExists(filename string) bool {
@@ -47,27 +52,34 @@ func main() {
 	// set global properties from configuration file
 	cfgPath := "./config/config.json"
 
+	cfgFile := os.Getenv("ConfigPath")
+	if cfgFile != "" {
+		cfgPath = cfgFile
+	}
+
 	// arguments: [1] ... alternative configuration file
 	if len(os.Args) == 2 {
-		log.Println("Rotterdam > Arguments[1] = " + os.Args[1])
+		log.Println(pathLOG + "Arguments[1] = " + os.Args[1])
 		if fileExists(os.Args[1]) {
-			log.Println("Rotterdam > Using configuration from " + os.Args[1])
+			log.Println(pathLOG + "Using configuration from " + os.Args[1])
 			cfgPath = os.Args[1]
 		}
 	} else {
-		log.Println("Rotterdam > Using default configuration file")
+		log.Println(pathLOG + "Using default configuration file")
 	}
-	log.Println("Rotterdam > Rest API > Getting configuration values from file [" + cfgPath + "] ...")
+	log.Println(pathLOG + "Getting configuration values from file [" + cfgPath + "] ...")
 
 	cfg.Config = cfg.Configuration{}
 
 	file, err := os.Open(cfgPath)
 	if err != nil {
+		log.Error(pathLOG+"ERROR (1) Error opening configuration file. ", err)
 		panic(err)
 	}
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&cfg.Config)
 	if err != nil {
+		log.Error(pathLOG+"ERROR (2) Error parsing configuration file conent (JSON). ", err)
 		panic(err)
 	}
 
@@ -75,34 +87,40 @@ func main() {
 	cfg.InitConfig(&cfg.Config)
 
 	// show global configuration
-	log.Printf("Rotterdam > Rest API > Rest Api Version ...... %s", cfg.Config.RestApiVersion)
-	log.Printf("Rotterdam > Rest API > Rules Engine Version .. %s", cfg.Config.RulesEngineVersion)
-	log.Printf("Rotterdam > Rest API > CaaS Version .......... %s", cfg.Config.CaaSVersion)
-	log.Printf("Rotterdam > Rest API > SLALite Version ....... %s", cfg.Config.SLALiteVersion)
-	log.Printf("Rotterdam > Rest API > IMEC Version .......... %s", cfg.Config.IMECVersion)
-	log.Printf("Rotterdam > Rest API > Server Port ........... %d", cfg.Config.ServerPort)
-	log.Printf("Rotterdam > Rest API > Clusters Configurations:")
+	log.Printf(pathLOG+"Rest Api Version ...... %s", cfg.Config.RestApiVersion)
+	log.Printf(pathLOG+"Rules Engine Version .. %s", cfg.Config.RulesEngineVersion)
+	log.Printf(pathLOG+"CaaS Version .......... %s", cfg.Config.CaaSVersion)
+	log.Printf(pathLOG+"SLALite Version ....... %s", cfg.Config.SLALiteVersion)
+	log.Printf(pathLOG+"IMEC Version .......... %s", cfg.Config.IMECVersion)
+	log.Printf(pathLOG+"Server Port ........... %d", cfg.Config.ServerPort)
+	log.Printf(pathLOG + "Clusters Configurations:")
 	for index := range cfg.Config.Clusters {
-		log.Printf("Rotterdam > Rest API >  => %s", cfg.Config.Clusters[index].Name)
-		log.Printf("Rotterdam > Rest API >     ID: %s", cfg.Config.Clusters[index].ID)
-		log.Printf("Rotterdam > Rest API >     Description: %s", cfg.Config.Clusters[index].Description)
-		log.Printf("Rotterdam > Rest API >     Type: %s", cfg.Config.Clusters[index].Type)
-		log.Printf("Rotterdam > Rest API >     Default Dock / Namespace: %s", cfg.Config.Clusters[index].DefaultDock)
-		log.Printf("Rotterdam > Rest API >     S.O.: %s", cfg.Config.Clusters[index].SO)
-		log.Printf("Rotterdam > Rest API >     Host IP: %s", cfg.Config.Clusters[index].HostIP)
-		log.Printf("Rotterdam > Rest API >     Kubernetes Endpoint: %s", cfg.Config.Clusters[index].KubernetesEndPoint)
-		log.Printf("Rotterdam > Rest API >     Openshift Endpoint: %s", cfg.Config.Clusters[index].OpenshiftEndPoint)
-		log.Printf("Rotterdam > Rest API >     SLALite Endpoint: %s", cfg.Config.Clusters[index].SLALiteEndPoint)
-		log.Printf("Rotterdam > Rest API >     Prometheus Pushgateway Endpoint: %s", cfg.Config.Clusters[index].PrometheusPushgatewayEndPoint)
+		log.Printf(pathLOG+"  => %s", cfg.Config.Clusters[index].Name)
+		log.Printf(pathLOG+"     ID: %s", cfg.Config.Clusters[index].ID)
+		log.Printf(pathLOG+"     Description: %s", cfg.Config.Clusters[index].Description)
+		log.Printf(pathLOG+"     Type: %s", cfg.Config.Clusters[index].Type)
+		log.Printf(pathLOG+"     Default Dock / Namespace: %s", cfg.Config.Clusters[index].DefaultDock)
+		log.Printf(pathLOG+"     S.O.: %s", cfg.Config.Clusters[index].SO)
+		log.Printf(pathLOG+"     Host IP: %s", cfg.Config.Clusters[index].HostIP)
+		log.Printf(pathLOG+"     Kubernetes Endpoint: %s", cfg.Config.Clusters[index].KubernetesEndPoint)
+		log.Printf(pathLOG+"     Openshift Endpoint: %s", cfg.Config.Clusters[index].OpenshiftEndPoint)
+		log.Printf(pathLOG+"     SLALite Endpoint: %s", cfg.Config.Clusters[index].SLALiteEndPoint)
+		log.Printf(pathLOG+"     Prometheus Pushgateway Endpoint: %s", cfg.Config.Clusters[index].PrometheusPushgatewayEndPoint)
+		log.Printf(pathLOG+"     Prometheus Endpoint: %s", cfg.Config.Clusters[index].PrometheusEndPoint)
 	}
-	log.Printf("Rotterdam > Rest API > Swagger UI ............ http://localhost:8333/swaggerui/index.html")
-	log.Println("Rotterdam > Rest API > Starting server [port " + strconv.Itoa(cfg.Config.ServerPort) + "] ...")
+	log.Printf(pathLOG + " Swagger UI ............ http://localhost:8333/swaggerui/index.html")
+	log.Println(pathLOG + " Starting server [port " + strconv.Itoa(cfg.Config.ServerPort) + "] ...")
 
 	// initialize URLs
 	urls.Initialize()
 
 	// adding clusters to DB
-	imec_db.AddConfigInfrsToDB()
+	_, err = imec_db.AddConfigInfrsToDB()
+	if err == nil {
+		clustersMonitoring.StartCheckingClusters()
+	} else {
+		log.Error(pathLOG+"ERROR (3) Error adding Infrastructure to database. Cluster monitoring was not started. ", err)
+	}
 
 	// initialize REST API
 	rest_api.InitializeRESTAPI()

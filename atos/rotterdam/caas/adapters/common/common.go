@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,21 +14,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 06 March 2020
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package common
 
 import (
-	structs "atos/rotterdam/caas/common/structs"
+	log "atos/rotterdam/common/logs"
+	structs "atos/rotterdam/globals/structs"
 	"encoding/json"
-	"log"
 	"strconv"
 	"strings"
 	"sync"
 )
 
+// path used in logs
+const pathLOG string = "Rotterdam > CAAS > Adapters > Common : "
+
+/*
+SERV_POD_PORT struct
+*/
 type SERV_POD_PORT struct {
 	Name       string `json:"name,omitempty"`
 	Protocol   string `json:"protocol,omitempty"`
@@ -34,6 +41,9 @@ type SERV_POD_PORT struct {
 	TargetPort int    `json:"targetPort,omitempty"`
 }
 
+/*
+SERV_POD struct
+*/
 type SERV_POD struct {
 	ApiVersion string `json:"apiVersion,omitempty"`
 	Kind       string `json:"kind,omitempty"`
@@ -79,10 +89,10 @@ NewRPort generate and read rport value
 */
 func NewRPort() int {
 	mu.Lock()
-	log.Println("Rotterdam > CAAS > Adapters > Common [newRPort] Getting new PORT ...")
+	log.Debug(pathLOG + "[newRPort] Getting new PORT ...")
 	rport = rport + 1
 	b := rport
-	log.Println("Rotterdam > CAAS > Adapters > Common [newRPort] New PORT = " + strconv.Itoa(b))
+	log.Debug(pathLOG + "[newRPort] New PORT = " + strconv.Itoa(b))
 	mu.Unlock()
 	return b
 }
@@ -91,12 +101,12 @@ func NewRPort() int {
 StringToServPodStruct Parses a string to a struct of type SERV_POD
 */
 func StringToServPodStruct(ct string) (*SERV_POD, error) {
-	log.Println("Rotterdam > CAAS > Adapters > Common [StringToServPodStruct] string tp json object / struct [SERV_POD]  ...")
+	log.Println(pathLOG + "[StringToServPodStruct] string tp json object / struct [SERV_POD]  ...")
 
 	data := &SERV_POD{}
 	err := json.Unmarshal([]byte(ct), data)
 	if err != nil {
-		log.Println("Rotterdam > CAAS > Adapters > Common [StringToServPodStruct] ERROR", err)
+		log.Error(pathLOG+"[StringToServPodStruct] ERROR", err)
 		return data, err
 	}
 
@@ -120,12 +130,12 @@ func GetMainPort(task structs.CLASS_TASK) (int, string) {
 	}
 
 	if mainPort == 0 {
-		log.Println("Rotterdam > CAAS > Adapters > Common [getMainPort] ERROR getting main port. Returning 80 ...")
+		log.Debug(pathLOG + "[getMainPort] ERROR getting main port. Returning 80 ...")
 		mainPort = 80
 		mainProtocol = "TCP"
 	}
 
-	log.Println("Rotterdam > CAAS > Adapters > Common [getMainPort] main port = " + strconv.Itoa(mainPort))
-	log.Println("Rotterdam > CAAS > Adapters > Common [getMainPort] main protocol = " + mainProtocol)
+	log.Debug(pathLOG + "[getMainPort] main port = " + strconv.Itoa(mainPort))
+	log.Debug(pathLOG + "[getMainPort] main protocol = " + mainProtocol)
 	return mainPort, mainProtocol
 }

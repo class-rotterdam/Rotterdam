@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,22 +14,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 15 Jan 2020
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package rest_api
 
 import (
 	adaptation_engine "atos/rotterdam/adaptation-engine"
+	clustersMonitoring "atos/rotterdam/adaptation-engine/monitoring"
 	caas "atos/rotterdam/caas"
-	common "atos/rotterdam/caas/common"
-	faas "atos/rotterdam/caas/faas"
+	log "atos/rotterdam/common/logs"
 	cfg "atos/rotterdam/config"
+	db "atos/rotterdam/database/caas"
+	faas "atos/rotterdam/faas"
 	imec "atos/rotterdam/imec"
 	"context"
 	"flag"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -37,11 +39,14 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// path used in logs
+const pathLOG string = "Rotterdam > REST API : "
+
 /*
 InitializeRESTAPI initialization function
 */
 func InitializeRESTAPI() {
-	log.Println("Rotterdam > REST API > api [InitializeRESTAPI] Initializing REST API' ...")
+	log.Println(pathLOG + "[InitializeRESTAPI] Initializing REST API' ...")
 
 	// initialize adapter after getting 'Mode' value
 	caas.InitializeAdapter()
@@ -53,19 +58,17 @@ func InitializeRESTAPI() {
 	// default
 	router.HandleFunc("/", caas.HomePath).Methods("GET")
 
-	// tests
-	router.HandleFunc("/api/v1/test/req", caas.TestGetRequest).Methods("GET")
-	router.HandleFunc("/api/v1/test/req", caas.TestPostRequest).Methods("POST")
-
 	// configuration
 	router.HandleFunc("/api/", caas.NotImplementedFunc).Methods("GET")
 	router.HandleFunc("/api/v1/", caas.NotImplementedFunc).Methods("GET")
 	// get configuration from K8s
-	router.HandleFunc("/api/v1/config", caas.GetConfig).Methods("GET")
 	router.HandleFunc("/api/v1/version", caas.GetVersion).Methods("GET")
 	router.HandleFunc("/api/v1/status", caas.NotImplementedFunc).Methods("GET")
 	router.HandleFunc("/api/v1/caas/config", caas.NotImplementedFunc).Methods("GET")
 	router.HandleFunc("/api/v1/rules-engine/config", adaptation_engine.NotImplementedFunc).Methods("GET")
+	// configuration & infrastructures
+	router.HandleFunc("/api/v1/config", caas.UpdateConfig).Methods("PUT")
+	router.HandleFunc("/api/v1/config", caas.GetCurrentConfig).Methods("GET")
 
 	// deployment and provisioning functions:
 	// get all tasks
@@ -73,9 +76,9 @@ func InitializeRESTAPI() {
 	// get all tasks qos - DEPRECATED
 	router.HandleFunc("/api/v1/docks/tasksqos", caas.GetAllTasksQoS).Methods("GET")
 	// deploy task - DEPRECATED
-	router.HandleFunc("/api/v1/docks/tasks", caas.DeployTask).Methods("POST")
+	router.HandleFunc("/api/v1/docks/tasks", DeployTask).Methods("POST")
 	// deploy COMPSs task - DEPRECATED
-	router.HandleFunc("/api/v1/docks/tasks-compss", caas.DeployTaskCOMPSs).Methods("POST")
+	router.HandleFunc("/api/v1/docks/tasks-compss", DeployTaskCOMPSs).Methods("POST")
 	// not-implemented - DEPRECATED
 	router.HandleFunc("/api/v1/docks/{dock}/tasks", caas.GetDockTasks).Methods("GET")
 	// get task - DEPRECATED
@@ -110,13 +113,13 @@ func InitializeRESTAPI() {
 	// get all tasks
 	router.HandleFunc("/api/v1/tasks", caas.GetAllTasks).Methods("GET")
 	// deploy task
-	router.HandleFunc("/api/v1/tasks", caas.DeployRotterdamTask).Methods("POST")
+	router.HandleFunc("/api/v1/tasks", Deploy).Methods("POST")
 	// get task
 	router.HandleFunc("/api/v1/tasks/{id}", caas.GetTask).Methods("GET")
 	// get task
 	router.HandleFunc("/api/v1/tasks/{id}/all", caas.GetTaskAllInfo).Methods("GET")
 	// remove task
-	router.HandleFunc("/api/v1/tasks/{id}", caas.RemoveRotterdamTask).Methods("DELETE")
+	router.HandleFunc("/api/v1/tasks/{id}", Remove).Methods("DELETE")
 
 	/************************************
 	 Path: /api/v1/functions...
@@ -124,13 +127,13 @@ func InitializeRESTAPI() {
 	// get all functions
 	router.HandleFunc("/api/v1/functions", faas.GetAllFunctions).Methods("GET")
 	// deploy function
-	router.HandleFunc("/api/v1/functions", faas.DeployFunction).Methods("POST")
+	router.HandleFunc("/api/v1/functions", Deploy).Methods("POST")
 	// call function
 	router.HandleFunc("/api/v1/functions/{id}", faas.CallFunction).Methods("POST")
 	// get function
 	router.HandleFunc("/api/v1/functions/{id}", faas.GetFunction).Methods("GET")
 	// remove function
-	router.HandleFunc("/api/v1/functions/{id}", faas.RemoveFunction).Methods("DELETE")
+	router.HandleFunc("/api/v1/functions/{id}", Remove).Methods("DELETE")
 
 	/************************************
 	 imec functions
@@ -155,6 +158,9 @@ func InitializeRESTAPI() {
 	// delete cluster
 	router.HandleFunc("/api/v1/imec/{id}/cluster", imec.DeleteCluster).Methods("DELETE")
 
+	// get cluster info
+	router.HandleFunc("/api/v1/imec/{id}/status", clustersMonitoring.GetClusterStatusInfo).Methods("GET")
+
 	// swagger api
 	sh := http.StripPrefix("/swaggerui/", http.FileServer(http.Dir("./rest-api/swaggerui/")))
 	router.PathPrefix("/swaggerui/").Handler(sh)
@@ -168,10 +174,10 @@ func InitializeRESTAPI() {
 
 	go func() {
 		// init DB
-		common.InitDB()
+		db.InitDB()
 
 		// init DB
-		log.Println("Rotterdam > REST API > api [InitializeRESTAPI] Server listening on port " + strconv.Itoa(cfg.Config.ServerPort) + " ...")
+		log.Println(pathLOG + "[InitializeRESTAPI] Server listening on port " + strconv.Itoa(cfg.Config.ServerPort) + " ...")
 		log.Printf("................................................................................")
 		if err := server.ListenAndServe(); err != nil {
 			if err != http.ErrServerClosed {
@@ -186,10 +192,13 @@ func InitializeRESTAPI() {
 	// stop server:
 	log.Printf("................................................................................")
 	// close DB
-	common.CloseDB()
+	db.CloseDB()
+
+	// stop cluster monitoring process
+	clustersMonitoring.StopCheckingClusters()
 
 	// shutdown server
-	log.Println("Rotterdam > REST API > api [InitializeRESTAPI] Shutting down server ...")
+	log.Println(pathLOG + "[InitializeRESTAPI] Shutting down server ...")
 
 	var shutdownTimeout = flag.Duration("shutdown-timeout", 10*time.Second, "shutdown timeout (5s,5m,5h) before connections are cancelled")
 	ctx, cancel := context.WithTimeout(context.Background(), *shutdownTimeout)
@@ -199,6 +208,6 @@ func InitializeRESTAPI() {
 		log.Fatal(err)
 	}
 
-	log.Println("Rotterdam > REST API > api [InitializeRESTAPI] Terminated")
+	log.Println(pathLOG + "[InitializeRESTAPI] Terminated")
 	log.Printf("................................................................................")
 }

@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,15 +14,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 Feb 2020
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package deployment
 
 import (
+	db "atos/rotterdam/database/imec"
 	constants "atos/rotterdam/globals/constants"
-	db "atos/rotterdam/imec/db"
 	"errors"
 	"log"
 	"strconv"

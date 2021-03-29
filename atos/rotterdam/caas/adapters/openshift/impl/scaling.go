@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,8 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 May 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package impl
@@ -22,8 +23,9 @@ import (
 	urls "atos/rotterdam/caas/adapters"
 	adapt_common "atos/rotterdam/caas/adapters/common"
 	common "atos/rotterdam/caas/common"
-	structs "atos/rotterdam/caas/common/structs"
-	imec_db "atos/rotterdam/imec/db"
+	db "atos/rotterdam/database/caas"
+	imec_db "atos/rotterdam/database/imec"
+	structs "atos/rotterdam/globals/structs"
 	"errors"
 	"log"
 	"strconv"
@@ -41,7 +43,7 @@ func getK8sScale(task structs.CLASS_TASK, cluster *imec_db.DB_INFRASTRUCTURE_CLU
 	}
 
 	log.Println("Rotterdam > CAAS > Adapters > Openshift > Scaling [getK8sScale] RESPONSE: " + data)
-	return common.CommStringToK8S_SCALE(data)
+	return structs.CommStringToK8S_SCALE(data)
 }
 
 // updateK8sScale updates the scale info => scale up / down
@@ -87,13 +89,13 @@ func ScaleUpDown(dbTask structs.DB_TASK, replicas int) (string, error) {
 				// update task information: replicas
 				dbTask.Replicas = replicas
 				task.Replicas = replicas
-				err = common.SetTaskValue(dbTask.Id, dbTask)
+				err = db.SetTaskValue(dbTask.Id, dbTask)
 			} else if dbTask.Type == structs.DB_TASK_TYPE_COMPSS {
 				// create / remove services nad update task info
 				go func() {
 					log.Println("Rotterdam > CAAS > Adapters > Openshift > Scaling [ScaleUpDown] Starting background tasks...")
 					dbTask = adapt_common.CompssScalingUpdateServices(dbTask, replicas, clusterInfr, true)
-					_ = common.SetTaskValue(dbTask.Id, dbTask)
+					_ = db.SetTaskValue(dbTask.Id, dbTask)
 					log.Println("Rotterdam > CAAS > Adapters > Openshift > Scaling [ScaleUpDown] Background tasks completed")
 				}()
 			} else {

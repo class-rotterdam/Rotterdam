@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,15 +14,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 11 June 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package adapters
 
 import (
-	structs "atos/rotterdam/caas/common/structs"
+	structs "atos/rotterdam/globals/structs"
 )
+
+// path used in logs
+const pathLOG string = "Rotterdam > CAAS > Adapters : "
 
 // generic adapter
 type Adapter interface {

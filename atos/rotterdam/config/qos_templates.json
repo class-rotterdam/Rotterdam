@@ -1,5 +1,29 @@
 [
     {
+        "type": "infr",
+        "guaranteeName": "Infr_Mem_2GB",
+        "maxAllowed": 1,
+        "action": "scale_out",
+        "scaleFactor": 1,
+        "guarantees": [
+            {
+                "name": "node_memory_MemAvailable_bytes",
+                "constraint": "node_memory_MemAvailable_bytes > 2048000000"
+            }
+        ]
+    },{
+        "type": "infr",
+        "guaranteeName": "bar_metric",
+        "maxAllowed": 3,
+        "action": "scale_out",
+        "scaleFactor": 1.5,
+        "guarantees": [
+            {
+                "name": "bar_metric",
+                "constraint": "bar_metric > 1"
+            }
+        ]
+    },{
         "type": "app-compss",
         "guaranteeName": "Default_COMPSs",
         "maxAllowed": 0,

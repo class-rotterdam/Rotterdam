@@ -1,26 +1,22 @@
 # ROTTERDAM CAAS
 
-#### "ACKNOWLEDGEMENT
-#### This work has been supported by the EU H2020 project CLASS, contract #780622."
-
------------------------
-
-
 &copy; Atos Spain S.A. 2018
 
 [![License: Apache v2](https://img.shields.io/badge/License-Apache%20v2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![version](https://img.shields.io/badge/version-1.8.14-blue.svg)]()
+[![version](https://img.shields.io/badge/version-1.10.5-blue.svg)]()
 
 
 -----------------------
 
 [Description](#description)
 
-[Relation to other CLASS components](#relation-to-other-class-components)
-
 [Installation Guide](#installation-guide)
 
+[SLALite component](#slalite-component)
+
 [Usage Guide](#usage-guide)
+
+[Relation to other components](#porject-class:-relation-to-other-components)
 
 [LICENSE](#license)
 
@@ -35,12 +31,6 @@ Rotterdam is part of the **CLASS** Project (Edge and Cloud Computation: A Highly
 ![rotterdam](images/class_rotterdam_v2.png)
 
 A docker image can be downloaded from https://hub.docker.com/r/atosclass/rotterdam-caas.
-
------------------------
-
-### Relation to other CLASS components
-
-This component is used by **COMPSs & DataClay** module to deploy and manage applications in the Cloud and Edge platform manager by Rotterdam.
 
 -----------------------
 
@@ -63,8 +53,8 @@ This component is used by **COMPSs & DataClay** module to deploy and manage appl
 - You can also run **Rotterdam** in Docker by pulling the image from Docker Hub:
 
     ```bash
-    docker pull atosclass/rotterdam-caas:1.7.9
-    docker run [OPTIONS] atosclass/rotterdam-caas:1.7.9 [COMMAND] [ARG...]
+    docker pull atosclass/rotterdam-caas:1.10.5
+    docker run [OPTIONS] atosclass/rotterdam-caas:1.10.5 [COMMAND] [ARG...]
     ```
 
 - Finally, to run **Rotterdam** in Openshift, deploy the [image](https://hub.docker.com/r/atosclass/rotterdam-caas) from Docker Hub using the OKD UI. The following environment variables can be defined:
@@ -79,8 +69,6 @@ This component is used by **COMPSs & DataClay** module to deploy and manage appl
     The **SLALiteEndPoint** is used to automatically generate SLAs and to stop or terminate them. The SLALite component should also point to Rotterdam to send it the violations.
 
     1. In OKD Web UI, go to selected project / namespace, i.e. the _default_ namespace, and select `Add to project > Deploy Image`
-	   ![rotterdam](images/deploy.png)
-		
     2. Select `Image Name`
         - `atosclass/slalite:1.7.9`
           - Name: `rotterdam-slaliteXXX`
@@ -179,14 +167,18 @@ EXPOSE 8333
 ENTRYPOINT ["/opt/rotterdam/run_rotterdam.sh"]
 ```
 
+-----------------------
+
+### SLALite component
+
+
+- ...
 
 -----------------------
 
 ### Usage Guide
 
 Once **Rotterdam** is deployed, you can access it through the REST API UI provided by _swagger_: (e.g.) http://rotterdam-caas.192.168.7.28.xip.io/swaggerui/
-
-![rotterdam](images/swagger.png)
 
 The following methods have been defined:
 
@@ -332,8 +324,5 @@ QoS templates used to define the SLAs associated to the tasks managed by Rotterd
     }
     ```
 
----------------------------------
 
-### LICENSE
-
-`Rotterdam` is licensed under [Apache License, version 2](LICENSE).
+`Rotterdam` is licensed under [Apache License, version 2](License.txt).

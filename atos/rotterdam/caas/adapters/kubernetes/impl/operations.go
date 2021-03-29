@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,8 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 11 June 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package impl
@@ -21,24 +22,25 @@ package impl
 import (
 	urls "atos/rotterdam/caas/adapters"
 	common "atos/rotterdam/caas/common"
-	structs "atos/rotterdam/caas/common/structs"
+	log "atos/rotterdam/common/logs"
 	cfg "atos/rotterdam/config"
-	imec_db "atos/rotterdam/imec/db"
-	"log"
+	db "atos/rotterdam/database/caas"
+	imec_db "atos/rotterdam/database/imec"
+	structs "atos/rotterdam/globals/structs"
 )
 
 // getK8sDeployment: k8s: get deployment info
 func getK8sDeployment(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace string, name string) (string, error) {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Operations [getK8sDeployment] Getting deployment from K8s cluster ...")
+	log.Println(pathLOG + "Operations [getK8sDeployment] Getting deployment from K8s cluster ...")
 	// map[string]interface{}, error
 	_, data, err := common.HTTPGETString(
 		urls.GetPathKubernetesDeployment(cluster, namespace, name),
 		false)
 	if err != nil {
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Operations [getK8sDeployment] ERROR", err)
+		log.Error(pathLOG+"Operations [getK8sDeployment] ERROR", err)
 		return "", err
 	}
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Operations [getK8sDeployment] RESPONSE: " + data)
+	log.Debug(pathLOG + "Operations [getK8sDeployment] RESPONSE: " + data)
 
 	return data, nil
 }
@@ -47,10 +49,10 @@ func getK8sDeployment(cluster *imec_db.DB_INFRASTRUCTURE_CLUSTER, namespace stri
 GetTaskAllInfo Returns a task (including deployment info)
 */
 func GetTaskAllInfo(idTask string) (structs.DB_TASK, error) {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Operations [GetTaskAllInfo] Getting deployment from Task with id=" + idTask + " ...")
+	log.Println(pathLOG + "Operations [GetTaskAllInfo] Getting deployment from Task with id=" + idTask + " ...")
 
 	// get task
-	dbTask, err := common.ReadTaskValue(idTask)
+	dbTask, err := db.ReadTaskValue(idTask)
 	if err == nil {
 		clusterInfr, _ := imec_db.GetCluster(dbTask.ClusterId)
 		task := dbTask.TaskDefinition
@@ -64,7 +66,7 @@ func GetTaskAllInfo(idTask string) (structs.DB_TASK, error) {
 		}
 	}
 
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Operations [GGetTaskAllInfoetTask] ERROR", err)
+	log.Error(pathLOG+"Operations [GGetTaskAllInfoetTask] ERROR", err)
 	return *dbTask, err
 }
 
@@ -72,14 +74,14 @@ func GetTaskAllInfo(idTask string) (structs.DB_TASK, error) {
 GetConfig Get k8s configuration
 */
 func GetConfig() (string, error) {
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Operations [GetConfig] Getting configuration from K8s cluster ...")
+	log.Println(pathLOG + "Operations [GetConfig] Getting configuration from K8s cluster ...")
 
 	_, data, err := common.HTTPGETString(cfg.Config.Clusters[0].KubernetesEndPoint+"/api", false)
 	if err != nil {
-		log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Operations [GetConfig] ERROR", err)
+		log.Error(pathLOG+"Operations [GetConfig] ERROR", err)
 		return "", err
 	}
-	log.Println("Rotterdam > CAAS > Adapters > Kubernetes > Operations [GetConfig] RESPONSE: " + data)
+	log.Println(pathLOG + "Operations [GetConfig] RESPONSE: " + data)
 
 	return data, err
 }

@@ -1,4 +1,6 @@
 //
+// Copyright 2018 Atos
+//
 // ROTTERDAM application
 // CLASS Project: https://class-project.eu/
 //
@@ -12,15 +14,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Created on 28 May 2019
-// @author: Roi Sucasas - ATOS
+// @author: ATOS
 //
 
 package sla
 
 import (
-	structs "atos/rotterdam/caas/common/structs"
 	cfg "atos/rotterdam/config"
+	structs "atos/rotterdam/globals/structs"
 	"log"
 	"strconv"
 	"strings"
@@ -37,8 +38,8 @@ func genDbTaskQos(taskID string, elem cfg.CLASS_QOS_TEMPLATE__ELEM) *structs.DB_
 		Type:            elem.Type,
 		Action:          elem.Action,
 		ScaleFactor:     elem.ScaleFactor,
-		MaxReplicas:     30,
-		MinReplicas:     1,
+		MaxReplicas:     cfg.Config.Tasks.MaxReplicas,
+		MinReplicas:     cfg.Config.Tasks.MinReplicas,
 		Guarantee:       elem.GuaranteeName,
 		TotalViolations: 0,
 		MaxAllowed:      elem.MaxAllowed}
@@ -62,6 +63,51 @@ func genGuarantees(taskName string, elem cfg.CLASS_QOS_TEMPLATE__ELEM) []structs
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
+/*
+CreateInfrGuarantees Creates Guarantees for default infrastructure
+*/
+func CreateInfrGuarantees(cluster string, qos structs.CLASS_TASK_QOS) ([]structs.SLA_AGREEMENT_DETAILS_GUARANTIES, *structs.DB_TASK_QOS, error) {
+	log.Println("Rotterdam > CAAS > SLA [CreateInfrGuarantees] Generating Guarantees from task qos [" + qos.Name + "] ...")
+
+	var guarantees []structs.SLA_AGREEMENT_DETAILS_GUARANTIES
+
+	if qos.Custom != nil && len(qos.Custom) > 0 {
+		log.Println("Rotterdam > CAAS > SLA [CreateInfrGuarantees] Translating custom Infr QoS to SLA guarantees ...")
+		if qos.Custom[0].Guarantees != nil {
+			guarantees = make([]structs.SLA_AGREEMENT_DETAILS_GUARANTIES, 0)
+
+			guarantee := structs.SLA_AGREEMENT_DETAILS_GUARANTIES{}
+			guarantee.Name = qos.Custom[0].Guarantees[0].Metric
+			guarantee.Constraint = qos.Custom[0].Guarantees[0].Metric + " " +
+				qos.Custom[0].Guarantees[0].Condition + " " + qos.Custom[0].Guarantees[0].Value
+
+			guarantees = append(guarantees, guarantee)
+
+			return guarantees, nil, nil
+		}
+	}
+
+	log.Println("Rotterdam > CAAS > SLA [CreateInfrGuarantees] Translating catalog Infr QoS to SLA guarantees ...")
+
+	qosTemplate, found := GetQoSElem(qos.Name)
+	if found {
+		guarantees = genGuarantees(cluster, qosTemplate)
+		dbtaskqos := genDbTaskQos(cluster, qosTemplate)
+		return guarantees, dbtaskqos, nil
+	}
+
+	qosTemplate, found = GetQoSElem(cfg.Config.SLAs.DefaultInfrQoSRule)
+	if found {
+		qos.Name = cfg.Config.SLAs.DefaultInfrQoSRule
+		guarantees = genGuarantees(cluster, qosTemplate)
+		dbtaskqos := genDbTaskQos(cluster, qosTemplate)
+		return guarantees, dbtaskqos, nil
+	}
+
+	log.Println("Rotterdam > CAAS > SLA [CreateInfrGuarantees] ERROR QoS element not found: [" + qos.Name + "]")
+	return guarantees, nil, nil
+}
 
 /*
 CreateGuarantees Creates Guarantees for default tasks
@@ -175,7 +221,7 @@ func CreateCOMPSsGuarantees(task structs.CLASS_TASK) ([]structs.SLA_AGREEMENT_DE
 			//
 			// B.1. Generate from QoS template
 			//
-			log.Println("Rotterdam > CAAS > SLA [CreateCOMPSsGuarantees] B.1. Using existing QoS template ...")
+			log.Println("Rotterdam > CAAS > SLA [CreateCOMPSsGuarantees] B.1. Using existing QoS template [" + task.QoSCOMPSs[0].QoSId + "] ...")
 			for _, v := range qosTemplate.Guarantees {
 				g.Name = v.Name // i.e. "kubelet_running_pod_count"
 
@@ -186,6 +232,13 @@ func CreateCOMPSsGuarantees(task structs.CLASS_TASK) ([]structs.SLA_AGREEMENT_DE
 				}
 
 				guarantees = append(guarantees, g)
+
+				// Add metrics
+				log.Println("Rotterdam > CAAS > SLA [CreateCOMPSsGuarantees] Adding new Prometheus metric [" + g.Name + "] ...")
+				err := AddPromMetric(g.Name)
+				if err != nil {
+					log.Println("Rotterdam > CAAS > SLA [CreateCOMPSsGuarantees] ERROR adding a new Prometheus metric ", err)
+				}
 			}
 		} else {
 			//
@@ -210,6 +263,13 @@ func CreateCOMPSsGuarantees(task structs.CLASS_TASK) ([]structs.SLA_AGREEMENT_DE
 			// guarantee
 			g.Name = task.QoSCOMPSs[0].Metric + "_" + agreementID
 			g.Constraint = task.QoSCOMPSs[0].Metric + "_" + agreementID + " " + comparator + " " + strconv.Itoa(value)
+
+			// Add metrics
+			log.Println("Rotterdam > CAAS > SLA [CreateCOMPSsGuarantees] Adding new Prometheus metric [" + g.Name + "] ...")
+			err := AddPromMetric(g.Name)
+			if err != nil {
+				log.Println("Rotterdam > CAAS > SLA [CreateCOMPSsGuarantees] ERROR adding a new Prometheus metric ", err)
+			}
 		}
 		guarantees = append(guarantees, g)
 
@@ -238,6 +298,13 @@ func CreateCOMPSsGuarantees(task structs.CLASS_TASK) ([]structs.SLA_AGREEMENT_DE
 				}
 
 				guarantees = append(guarantees, g)
+
+				// Add metrics
+				log.Println("Rotterdam > CAAS > SLA [CreateCOMPSsGuarantees] Adding new Prometheus metric [" + g.Name + "] ...")
+				err := AddPromMetric(g.Name)
+				if err != nil {
+					log.Println("Rotterdam > CAAS > SLA [CreateCOMPSsGuarantees] ERROR adding a new Prometheus metric ", err)
+				}
 			}
 		} else {
 			//
@@ -269,6 +336,13 @@ func CreateCOMPSsGuarantees(task structs.CLASS_TASK) ([]structs.SLA_AGREEMENT_DE
 			g.Constraint = "deadlines_missed_" + agreementID + " " + comparator + " " + strconv.Itoa(value)
 
 			guarantees = append(guarantees, g)
+
+			// Add metrics
+			log.Println("Rotterdam > CAAS > SLA [CreateCOMPSsGuarantees] Adding new Prometheus metric [" + g.Name + "] ...")
+			err := AddPromMetric(g.Name)
+			if err != nil {
+				log.Println("Rotterdam > CAAS > SLA [CreateCOMPSsGuarantees] ERROR adding a new Prometheus metric ", err)
+			}
 		}
 	}
 
