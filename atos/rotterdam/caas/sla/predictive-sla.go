@@ -91,7 +91,7 @@ func Predict(task *structs.CLASS_TASK) (*structs.CLASS_TASK, error) {
 		return task, err
 	} else {
 		log.Println(pathLOG + "[Predict] RESPONSE data: " + data)
-		data = strings.Replace(data, "[\"http://prometheus.192.168.7.28.xip.io\"]", "", 1)
+		data = strings.Replace(data, "[\"http://prometheus.192.168.7.28.nip.io\"]", "", 1)
 		log.Println(pathLOG + "[Predict] RESPONSE data: " + data)
 		// data (string) to PredictionParamenters
 		predRes, err := stringToPredictionParamenters(data)

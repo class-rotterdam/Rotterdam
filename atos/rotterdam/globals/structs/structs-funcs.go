@@ -273,7 +273,7 @@ func StructNewRouteTemplate(appID string, mainPort int, mainPortName string, ser
 	jsonRoute.Metadata.Name = "route-" + appID
 	jsonRoute.Metadata.Namespace = "class"
 
-	jsonRoute.Spec.Host = appID + "." + serverIP + ".xip.io"
+	jsonRoute.Spec.Host = appID + "." + serverIP + ".nip.io"
 	jsonRoute.Spec.Port.TargetPort = strings.ToLower(mainPortName) //strconv.Itoa(mainPort)
 
 	jsonRoute.Spec.To.Kind = "Service"

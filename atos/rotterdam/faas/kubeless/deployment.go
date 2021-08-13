@@ -93,7 +93,7 @@ func Deploy(w http.ResponseWriter, f *structs.CLASS_FUNCTION_TASK) (*structs.DB_
 			Type:               structs.DB_TASK_TYPE_FUNCTION,
 			ClusterId:          clusterID,
 			AgreementId:        strings.Replace(f.ID, "-", "_", -1),
-			Url:                "http://" + f.ID + "." + clusterHost + ".xip.io",
+			Url:                "http://" + f.ID + "." + clusterHost + ".nip.io",
 			Status:             "Deployed",
 			Replicas:           1,
 			FunctionDefinition: *f}

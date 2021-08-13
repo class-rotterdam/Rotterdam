@@ -70,7 +70,7 @@ func DeployTask(task structs.CLASS_TASK) (string, error) {
 				Type:           structs.DB_TASK_TYPE_DEFAULT,
 				ClusterId:      clusterID,
 				AgreementId:    strings.Replace(task.ID, "-", "_", -1),
-				Url:            "http://" + task.ID + "." + clusterHost + ".xip.io",
+				Url:            "http://" + task.ID + "." + clusterHost + ".nip.io",
 				Status:         "Deployed",
 				Replicas:       task.Replicas,
 				TaskDefinition: task}
