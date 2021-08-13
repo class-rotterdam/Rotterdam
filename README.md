@@ -3,7 +3,7 @@
 &copy; Atos Spain S.A. 2018
 
 [![License: Apache v2](https://img.shields.io/badge/License-Apache%20v2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![version](https://img.shields.io/badge/version-1.10.5-blue.svg)]()
+[![version](https://img.shields.io/badge/version-1.10.7-blue.svg)]()
 
 
 -----------------------
@@ -15,8 +15,6 @@
 [SLALite component](#slalite-component)
 
 [Usage Guide](#usage-guide)
-
-[Relation to other components](#porject-class:-relation-to-other-components)
 
 [LICENSE](#license)
 
@@ -80,6 +78,14 @@ A docker image can be downloaded from https://hub.docker.com/r/atosclass/rotterd
     4. Go to new application / deplopyment and select `Create Route`
         - SLALite - Hostname: `rotterdam-slalite.192.168.7.28.xip.io`
         - Rotterdam - Hostname: `rotterdam-cass.192.168.7.28.xip.io`
+
+##### Environment variables
+
+- OpenshiftOauthToken: the value of this token has to be created manually after installing Openshift and configuring users and permissions. This variable is supported only when using Openshift. In the case of Kubernetes this variable is not needed.
+- SLALiteEndPoint: this is the URL of the SLA Manager
+- PrometheusPushgatewayEndPoint (optional): if there are applications that need to use this tool to push metrics to Prometheus, then the value has to be set
+- MaxAllowed (optional): Maximun number of violations allowed before sending a notification to the Adaptation Engine. This is a default value used by the platform to decide when to generate a violation in order to take the required actions. 
+- MaxReplicas (optional): Default maximun number of replicas allowed per application. In the case one application needs to be scaled our, this value is used to limit the number of replicas.
 
 ##### Configuration file
 
@@ -171,38 +177,65 @@ ENTRYPOINT ["/opt/rotterdam/run_rotterdam.sh"]
 
 ### SLALite component
 
-
-- ...
+[SLA repository](https://github.com/class-rotterdam/Rotterdam/tree/master/slalite.class)
 
 -----------------------
 
 ### Usage Guide
 
-Once **Rotterdam** is deployed, you can access it through the REST API UI provided by _swagger_: (e.g.) http://rotterdam-caas.192.168.7.28.xip.io/swaggerui/
+Once **Rotterdam** is deployed, you can access it through the REST API UI provided by _swagger_: (e.g. http://rotterdam-caas.X.X.X.X.nip.io/swaggerui/)
 
 The following methods have been defined:
 
-- To get information about Rotterdam or the selected orchestrator
-  - **GET** /api/v1/config
+- To get information about Rotterdam
   - **GET** /api/v1/version
-  - **GET** /api/v1/status
-  - **GET** /api/v1/caas/config
-  - **GET** /api/v1/rules-engine/config
+
 - The following method is used by the **SLALite** component to send Rotterdam violations and notifications
-  - **POST** /api/v1/sla/tasks/{name}/guarantee/{guarantee}
+  - **POST** /api/v1/sla/tasks/{id}/guarantee/{guarantee}
+
 - To get all running tasks
   - **GET** /api/v1/tasks
+
 - To create a new tasks in Rotterdam
   - **POST** /api/v1/tasks
+
 - To view / manage tasks
   - **GET** /api/v1/tasks/{name}
   - **DELETE** /api/v1/tasks/{name}
+
+- To get all orchestrators to be managed by Rotterdam
+  - **GET** /api/v1/imec
+
+- To create a new orchestrators to be managed by Rotterdam
+  - **POST** /api/v1/imec
+
 - QoS templates
   - **POST** /api/v1/qos/definitions  (creates a new QoS template)
   - **GET** /api/v1/qos/definitions
   - **GET** /api/v1/qos/definitions/{name}
 	
-#### Default task definition examples
+#### Orchestrator definition examples
+
+```json
+{
+        "ID": "maincluster",
+        "Name": "k8s",
+        "Description": "main cluster",
+        "DefaultDock": "class",
+        "Type": "Kubernetes",
+        "SO": "ubuntu18",
+        "KubernetesEndPoint": "http://X.X.X.X:8001",
+        "HostIP": "192.168.7.42",
+        "SLALiteEndPoint": "http://rotterdam-slalite.X.X.X.X.nip.io",
+        "PrometheusPushgatewayEndPoint": "http://pushgateway.X.X.X.X.nip.io",
+        "PrometheusEndPoint": "http://X.X.X.X:32679",
+        "User": "vagrant",
+        "Password": "vagrant",
+        "HostPort": 22
+    }
+```
+
+#### Task definition examples
 
 ```json
 {
