@@ -57,18 +57,18 @@ A docker image can be downloaded from https://hub.docker.com/r/atosclass/rotterd
 - You can also run **Rotterdam** in Docker by pulling the image from Docker Hub:
 
     ```bash
-    docker pull atosclass/rotterdam-caas:1.10.5
-    docker run [OPTIONS] atosclass/rotterdam-caas:1.10.5 [COMMAND] [ARG...]
+    docker pull atosclass/rotterdam-caas:1.10.7
+    docker run [OPTIONS] atosclass/rotterdam-caas:1.10.7 [COMMAND] [ARG...]
     ```
 
 - Finally, to run **Rotterdam** in Openshift, deploy the [image](https://hub.docker.com/r/atosclass/rotterdam-caas) from Docker Hub using the OKD UI. The following environment variables can be defined:
 
-    - **KubernetesEndPoint** (e.g.) "http://192.168.7.28:8001"
-    - **OpenshiftEndPoint** (e.g.) "https://192.168.7.28:8443"
+    - **KubernetesEndPoint** (e.g.) "http://X.X.X.X:8001"
+    - **OpenshiftEndPoint** (e.g.) "https://X.X.X.X:8443"
     - **ServerIP** (e.g.) "192.168.7.28"
     - **OpenshiftOauthToken** (e.g.) "eyJhbGciOiJSUzI1 ... 3MiOiJrdWJlcm5ldGVzL3Nlc"
-    - **SLALiteEndPoint** (e.g.) "http://rotterdam-slalite.192.168.7.28.xip.io"
-    - **PrometheusPushgatewayEndPoint** (e.g.) "http://pushgateway.192.168.7.28.xip.io"
+    - **SLALiteEndPoint** (e.g.) "http://rotterdam-slalite.X.X.X.X.nip.io"
+    - **PrometheusPushgatewayEndPoint** (e.g.) "http://pushgateway.X.X.X.X.nip.io"
 
     The **SLALiteEndPoint** is used to automatically generate SLAs and to stop or terminate them. The SLALite component should also point to Rotterdam to send it the violations.
 
@@ -82,8 +82,8 @@ A docker image can be downloaded from https://hub.docker.com/r/atosclass/rotterd
           - Environment Variables: `OpenshiftOauthToken`
     3. Deploy
     4. Go to new application / deplopyment and select `Create Route`
-        - SLALite - Hostname: `rotterdam-slalite.192.168.7.28.xip.io`
-        - Rotterdam - Hostname: `rotterdam-cass.192.168.7.28.xip.io`
+        - SLALite - Hostname: `rotterdam-slalite.X.X.X.X.nip.io`
+        - Rotterdam - Hostname: `rotterdam-cass.X.X.X.X.nip.io`
 
 ##### Environment variables
 
@@ -110,22 +110,22 @@ Example:
         "Name": "Default",
         "Description": "Main cluster",
         "Type": "Openshift",
-        "KubernetesEndPoint": "http://192.168.7.28:8001",
-        "OpenshiftEndPoint": "https://192.168.7.28:8443",
+        "KubernetesEndPoint": "http://X.X.X.X:8001",
+        "OpenshiftEndPoint": "https://X.X.X.X:8443",
         "HostIP": "192.168.7.28",
         "OpenshiftOauthToken": "aeeyJhbGciOi32JSUzI1NiIs....5VeNb12oaV7Iwzx",
-        "SLALiteEndPoint": "http://rotterdam-slalite.192.168.7.28.xip.io",
-        "PrometheusPushgatewayEndPoint": "http://pushgateway.192.168.7.28.xip.io"
+        "SLALiteEndPoint": "http://rotterdam-slalite.X.X.X.X.nip.io",
+        "PrometheusPushgatewayEndPoint": "http://pushgateway.X.X.X.X.nip.io"
     },
     {
         "ID": "microk8s_1",
         "Name": "microk8s_1",
         "Description": "microk8s in Edge device",
         "Type": "microk8s",
-        "KubernetesEndPoint": "http://192.168.1.34:8001",
+        "KubernetesEndPoint": "http://X.X.X.X:8001",
         "HostIP": "192.168.1.34",
-        "SLALiteEndPoint": "http://192.168.1.34:8090",
-        "PrometheusPushgatewayEndPoint": "http://pushgateway.192.168.7.28.xip.io",
+        "SLALiteEndPoint": "http://X.X.X.X:8090",
+        "PrometheusPushgatewayEndPoint": "http://pushgateway.X.X.X.X.nip.io",
         "User": "vagrant",
         "Password": "vagrant",
         "HostPort": 22
