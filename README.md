@@ -39,6 +39,12 @@ A docker image can be downloaded from https://hub.docker.com/r/atosclass/rotterd
 - Docker (https://docs.docker.com/install/)
 - Kubernetes (https://kubernetes.io/docs/setup/) / MicroK8s (microKubernetes) (https://microk8s.io/) / Openshift-OKD (https://docs.okd.io/latest/install/index.html)
 
+#### Docker Hub images
+
+**Rotterdam** https://hub.docker.com/r/atosclass/rotterdam-caas
+
+**SLALite component** https://hub.docker.com/r/atosclass/slalite
+
 #### Installation
 
 - You can download the repository and create the docker image:
@@ -68,7 +74,7 @@ A docker image can be downloaded from https://hub.docker.com/r/atosclass/rotterd
 
     1. In OKD Web UI, go to selected project / namespace, i.e. the _default_ namespace, and select `Add to project > Deploy Image`
     2. Select `Image Name`
-        - `atosclass/slalite:1.7.9`
+        - `atosclass/slalite:0.9.1`
           - Name: `rotterdam-slaliteXXX`
           - Environment Variables: `UrlPrometheus`, `UrlRotterdam`, `MetricsPrometheus`
         - `atosclass/rotterdam`
