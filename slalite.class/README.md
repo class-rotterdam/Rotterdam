@@ -15,68 +15,24 @@ This version of the SLALite can be downloaded from the following URL as a docker
 
 ### Environment variables ###
 
-To connect this SLALite with Prometheus and Rotterdam, define the following environment variables:
+To connect this SLALite with Prometheus and Rotterdam, define the following environment variables (e.g.):
 
 - **MetricsPrometheus** "go_memstats_frees_total, metric_name_2, ..."
-- **UrlPrometheus** "http://prometheus.192.168.7.28.xip.io"
-- **UrlRotterdam** "http://rotterdam-caas.192.168.7.28.xip.io"
-
-### Dockerfile ###
-
-```bash
-##########################################
-FROM golang:alpine as builder
-
-ARG VERSION
-ARG DATE
-
-RUN apk add --no-cache git curl
-
-RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-
-WORKDIR /go/src/SLALite
-
-COPY . .
-
-RUN go get -d -v ./...
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o SLALite .
-
-##########################################
-FROM alpine:3.6
-WORKDIR /opt/slalite
-COPY --from=builder /go/src/SLALite/SLALite .
-
-RUN apk add --no-cache curl
-RUN mkdir /etc/slalite
-COPY docker/slalite_mongo.yml /etc/slalite/slalite.yml
-COPY docker/run_slalite_mongo.sh run_slalite.sh
-RUN addgroup -S slalite && adduser -D -G slalite slalite
-RUN chown -R slalite:slalite /etc/slalite && chmod 775 /etc/slalite
-RUN chmod 775 /opt/slalite/run_slalite.sh
-RUN chmod 775 /etc/slalite/slalite.yml
-
-EXPOSE 8090
-USER slalite
-ENTRYPOINT ["/opt/slalite/run_slalite.sh"]
-#ENTRYPOINT ["/opt/slalite/SLALite"]
-```
+- **UrlPrometheus** "http://X.X.X.X:XXX"
+- **UrlRotterdam** "http://X.X.X.X:XXX"
 
 ----------------------------
 
 ## Description ##
 
-The SLALite is a lightweight implementation of an SLA system, inspired by the
-WS-Agreement standard. Its features are:
+The SLALite is a lightweight implementation of an SLA system, inspired by the WS-Agreement standard. Its features are:
 
 * REST interface to manage creation and update of agreements
-* Agreements evaluation on background; any breach in the agreement terms
-  generates an SLA violation.
+* Agreements evaluation on background; any breach in the agreement terms generates an SLA violation.
 * Configurable monitoring: a monitoring has to be provided externally.
-* Configurable repository: a memory repository (for developing purposes)
-  and a mongodb repository are provided, but more can be added.
+* Configurable repository: a memory repository (for developing purposes) and a mongodb repository are provided, but more can be added.
 
-An agreement is represented by a simple JSON structure
-(see examples in resources/samples):
+An agreement is represented by a simple JSON structure (see examples in resources/samples):
 
 ```
 {
@@ -103,6 +59,8 @@ An agreement is represented by a simple JSON structure
 ## Quick usage guide ##
 
 ### Installation ###
+
+Download repository.
 
 Build the Docker image:
 
