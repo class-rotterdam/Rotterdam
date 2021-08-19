@@ -37,9 +37,26 @@ A docker image can be downloaded from https://hub.docker.com/r/atosclass/rotterd
 #### Requirements
 
 - Docker (https://docs.docker.com/install/)
+- Golang (when using Github code to compile and generate the executable) (https://golang.org/doc/install)
 - Kubernetes (https://kubernetes.io/docs/setup/) / MicroK8s (microKubernetes) (https://microk8s.io/) / Openshift-OKD (https://docs.okd.io/latest/install/index.html)
 
+The requirements for installing the other tools that are part of the cloud platform, Openshift (or Kubernetes) and the monitoring tools, can be found in the following links:
+
+- Openshift (version 3.10)
+https://docs.openshift.com/container-platform/3.10/install/prerequisites.html
+- Kubernetes
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+- Prometheus, Prometheus Pushgateway and Grafana
+As these tools are provided as docker images, they can be installed in the container orchestrator (Openshift or Kubernetes). Thus, in this kind of environment, they only require the containers orchestrator.
+
+To install an Openshift cluster, users can use the following guide: https://docs.openshift.com/container-platform/3.10/install/index.html
+This guide is specific for Openshift version 3.10, the one used in the Modena Data Center cluster during the project. At the time of writing this document there is a newer versions of Openshift: 4.4
+As Openshift requires certain security features, the installation will require more steps and will be more constrained to certain Linux releases, like Centos or RHEL.
+By contrast, the installation of a Kubernetes cluster is less complex. Users can follow the guides provided by Kubernetes, which include the installarion of Kubernetes in multiple or single hosts (MicroK8s): https://kubernetes.io/docs/setup/
+
 #### Docker Hub images
+
+The last version of the SLA and Rotterdam can also be found in Docker Hub as containerized docker images.
 
 **Rotterdam** https://hub.docker.com/r/atosclass/rotterdam-caas
 
