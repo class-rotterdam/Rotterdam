@@ -1,7 +1,7 @@
 # SLALite #
 
 [![License: Apache v2](https://img.shields.io/badge/License-Apache%20v2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![version](https://img.shields.io/badge/version-0.7.0-blue.svg)]()
+[![version](https://img.shields.io/badge/version-0.9.1-blue.svg)]()
 
 This project is licensed under the Apache License 2.0
 
